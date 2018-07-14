@@ -1,7 +1,7 @@
 import os
 import numpy as np
 from collections import Counter
-
+from tqdm import tqdm
 
 class Dictionary(object):
     def __init__(self):
@@ -26,9 +26,9 @@ class Dictionary(object):
 class Corpus(object):
     def __init__(self, path):
         self.dictionary = Dictionary()
-        #self.train = self.tokenize(os.path.join(path, 'train.txt'))
+        self.train = self.tokenize(os.path.join(path, 'train.txt'))
         self.valid = self.tokenize(os.path.join(path, 'valid.txt'))
-        #self.test = self.tokenize(os.path.join(path, 'test.txt'))
+        self.test = self.tokenize(os.path.join(path, 'test.txt'))
 
     def tokenize(self, path):
         """Tokenizes a text file."""
@@ -37,7 +37,7 @@ class Corpus(object):
         # Add words to the dictionary
         with open(path, 'r') as f:
             tokens = 0
-            for line in f:
+            for line in tqdm(f):
                 words = line.split() + ['<eos>']
                 tokens += len(words)
                 for word in words:

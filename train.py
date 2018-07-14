@@ -10,7 +10,7 @@ eval_batch_size = 10
 test_batch_size = 1
 batch_size = 32
 SEQ_LEN = 50
-#train_data = batchify(corpus.train, batch_size)
+train_data = batchify(corpus.train, batch_size)
 val_data = batchify(corpus.valid, eval_batch_size)
 #test_data = batchify(corpus.test, test_batch_size)
 
@@ -27,7 +27,7 @@ val_data = batchify(corpus.valid, eval_batch_size)
 #X = np.array(X)
 #y = np.array(y)
 
-
+train_gen = data_gen(train_data,SEQ_LEN, batch_size=eval_batch_size)
 valid_gen = data_gen(val_data,SEQ_LEN, batch_size=eval_batch_size)
 
 num_words = len(corpus.dictionary.counter)
@@ -46,8 +46,8 @@ def build_model():
 
 model = build_model()
 
-model.fit_generator(valid_gen, steps_per_epoch=200000,use_multiprocessing=True,
-                    workers=6)
+model.fit_generator(valid_gen, steps_per_epoch=train_data.shape[0]-SEQ_LEN-1,use_multiprocessing=True,
+                    workers=8)
 
 
 #model.fit(X,y)

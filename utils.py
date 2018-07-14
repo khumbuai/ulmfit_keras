@@ -16,9 +16,13 @@ def get_batch(source, i, seq_len=None):
     target = source[i+1+seq_len]
     return data, target
 
-def data_gen(source, seq_len, batch_size = 1):
+def data_gen(source, bptt, batch_size):
+
     while True:
         for i in range(len(source)):
+            bptt = bptt if np.random.random() < 0.95 else bptt / 2.
+            # Prevent excessively small or negative sequence lengths
+            seq_len = max(5, int(np.random.normal(bptt, 5)))
             data, target = get_batch(source,i,seq_len)
             if batch_size == 1:
                 data, target = np.expand_dims(data, axis=0), np.expand_dims(target, axis=0)
