@@ -15,6 +15,7 @@ mv wiki.test.tokens test.txt
 cd ..
 
 echo "- Downloading WikiText-103 (WT2)"
+
 wget --continue https://s3.amazonaws.com/research.metamind.io/wikitext/wikitext-103-v1.zip
 unzip -q wikitext-103-v1.zip
 cd wikitext-103

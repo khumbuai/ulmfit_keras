@@ -5,6 +5,8 @@ from tqdm import tqdm
 
 class Dictionary(object):
     def __init__(self):
+        self.unk_token = '<unk>'
+        self.max_vocab = 100000
         self.word2idx = {}
         self.idx2word = []
         self.counter = Counter()
@@ -25,33 +27,50 @@ class Dictionary(object):
 
 class Corpus(object):
     def __init__(self, path):
-        self.dictionary = Dictionary()
-        self.train = self.tokenize(os.path.join(path, 'train.txt'))
-        self.valid = self.tokenize(os.path.join(path, 'valid.txt'))
-        self.test = self.tokenize(os.path.join(path, 'test.txt'))
+        self.max_vocab = 100000
+        self.word2idx = {}
+        self.num_tokens = [0, 0, 0]
+        self.unk_token = '<unk>'
+        #self.dictionary = Dictionary()
+        self.train_txt_path = os.path.join(path, 'train.txt')
+        self.valid_txt_path = os.path.join(path, 'valid.txt')
+        self.test_txt_path = os.path.join(path, 'test.txt')
+        self.get_vocab()
+        self.idx2word = {i:w for w,i in self.word2idx.items()}
+        self.train = self.tokenize(self.train_txt_path,self.num_tokens[0])
+        self.valid = self.tokenize(self.valid_txt_path,self.num_tokens[1])
+        self.test = self.tokenize(self.test_txt_path,self.num_tokens[2])
 
-    def tokenize(self, path):
-        """Tokenizes a text file."""
+    def get_vocab(self):
+        counter = Counter()
+        for i,path in enumerate([self.train_txt_path, self.valid_txt_path, self.test_txt_path]):
+            with open(path, 'r') as f:
+                for line in tqdm(f):
+                    words = line.split() + ['<eos>']
+                    self.num_tokens[i] += len(words)
+                    counter.update(words)
+        words = [w[0] for w in counter.most_common(self.max_vocab)]
+        self.word2idx = {w:i for i,w in enumerate(words)}
+
+
+
+    def tokenize(self, path, num_tokens):
+        #"Tokenizes a text file."
         print(path)
         assert os.path.exists(path)
         # Add words to the dictionary
-        with open(path, 'r') as f:
-            tokens = 0
-            for line in tqdm(f):
-                words = line.split() + ['<eos>']
-                tokens += len(words)
-                for word in words:
-                    self.dictionary.add_word(word)
 
         # Tokenize file content
         with open(path, 'r') as f:
-            #ids = torch.LongTensor(tokens)
-            ids = np.repeat(-1,tokens)
+            ids = np.repeat(-1,num_tokens)
             token = 0
-            for line in f:
+            for line in tqdm(f):
                 words = line.split() + ['<eos>']
                 for word in words:
-                    ids[token] = self.dictionary.word2idx[word]
+                    try:
+                        ids[token] = self.word2idx[word]
+                    except KeyError:
+                        ids[token] = self.word2idx[self.unk_token]
                     token += 1
 
         return ids
