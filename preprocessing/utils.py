@@ -1,5 +1,9 @@
 import numpy as np
 import csv
+import urllib3
+import os
+
+
 def batchify(data, batch_size):
     # Work out how cleanly we can divide the dataset into bsz parts.
     nbatch = len(data) // batch_size
@@ -16,11 +20,29 @@ def get_batch(source, i, seq_len=None):
     target = source[i+1+seq_len]
     return data, target
 
+
 def get_batch2(source, i, seq_len=None):
     seq_len = min(seq_len, len(source) - 1 - i)
     data = source[i:i+seq_len]
     target = source[i+1:i+1+seq_len]
     return data, target
+
+
+def maybe_download(filename, source_url, work_directory):
+    """Download the filename from the source url into the working directory if it does not exist."""
+    if not os.path.exists(work_directory):
+        os.makedirs(work_directory)
+    filepath = os.path.join(work_directory, filename)
+    if not os.path.exists(filepath):
+        urllib3.disable_warnings()
+        with urllib3.PoolManager() as http:
+            r = http.request('GET', source_url)
+            with open(filepath, 'wb') as fout:
+                fout.write(r.read())
+
+        print('{} succesfully downloaded'.format(filename))
+    return filepath
+
 
 def data_gen(source, bptt, batch_size):
 
@@ -37,6 +59,7 @@ def data_gen(source, bptt, batch_size):
 
             yield data, target
 
+
 def data_gen2(source, bptt, batch_size):
     i = 0
     while i < len(source):
@@ -51,6 +74,7 @@ def data_gen2(source, bptt, batch_size):
                 target = np.expand_dims(target.T, axis=2)
             yield data, target
             i+= seq_len
+
 
 def write_file(file_path, text_path, num_tokens):
     total_num_tokens = 0
@@ -70,6 +94,7 @@ def write_file(file_path, text_path, num_tokens):
                 if i % 10000 == 0:
                     print('Processed {:,} documents. Total # tokens: {:,}.'.format(i, total_num_tokens))
     print('{}. # documents: {:,}. # tokens: {:,}.'.format(file_path, i, total_num_tokens))
+
 
 if __name__=='__main__':
     write_file('assets/val.csv','assets/wikitext-103/valid.txt',1000000)
