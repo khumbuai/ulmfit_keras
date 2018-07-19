@@ -13,6 +13,7 @@ import pickle
 os.environ["CUDA_VISIBLE_DEVICES"]="1"
 from keras.layers import Input, CuDNNLSTM, Embedding, Dense, TimeDistributed, Dropout
 from keras.models import Model, load_model
+from keras.optimizers import Adam
 from keras.callbacks import ModelCheckpoint, EarlyStopping
 from keras.losses import categorical_crossentropy, sparse_categorical_crossentropy
 from tied_embeddings import TiedEmbeddingsTransposed
@@ -38,15 +39,21 @@ valid_gen = data_gen2(val_data,SEQ_LEN, batch_size=eval_batch_size)
 
 num_words = len(corpus.word2idx) +1
 
-def build_language_model(dropout=0.4, dropouth=0.3, dropouti=0.5, dropoute=0.1, wdrop=0.5, tie_weights=True):
+def build_language_model(dropout=0.1, dropouth=0.3, dropouti=0.2, dropoute=0.1, wdrop=0.5, tie_weights=True, use_qrnn=False):
 
     inp = Input(shape=(None,))
     emb = Embedding(num_words,300)
     emb_inp = emb(inp)
     emb_inp = Dropout(dropouti)(emb_inp)
-    rnn = CuDNNLSTM(1024, return_sequences=True)(emb_inp)
-    rnn = CuDNNLSTM(1024, return_sequences=True)(rnn)
-    rnn = CuDNNLSTM(300, return_sequences=True)(rnn)
+
+    if use_qrnn:
+        rnn = QRNN(1024, return_sequences=True, window_size=2)(emb_inp)
+        rnn = QRNN(1024, return_sequences=True, window_size=1)(rnn)
+        rnn = QRNN(300, return_sequences=True,window_size=1)(rnn)
+    else:
+        rnn = CuDNNLSTM(1024, return_sequences=True)(emb_inp)
+        rnn = CuDNNLSTM(1024, return_sequences=True)(rnn)
+        rnn = CuDNNLSTM(300, return_sequences=True)(rnn)
 
     if tie_weights:
         logits = TimeDistributed(TiedEmbeddingsTransposed(tied_to=emb,activation='softmax'))(rnn)
@@ -54,7 +61,7 @@ def build_language_model(dropout=0.4, dropouth=0.3, dropouti=0.5, dropoute=0.1, 
         logits = TimeDistributed(Dense(num_words, activation='softmax'))(rnn)
     out = Dropout(dropout)(logits)
     model = Model(inputs=inp, outputs=out)
-    model.compile(optimizer='adam', loss='sparse_categorical_crossentropy')
+    model.compile(optimizer=Adam(lr=3e-4,beta_1=0.8,beta_2=0.99), loss='sparse_categorical_crossentropy')
     model.summary()
     return model
 
