@@ -1,5 +1,5 @@
-import data
-from utils import batchify, get_batch, data_gen
+from keras_wiki_lm.preprocessing.data import Corpus
+from keras_wiki_lm.preprocessing.utils import batchify, get_batch, data_gen
 import numpy as np
 
 import os
@@ -14,9 +14,9 @@ os.environ["CUDA_VISIBLE_DEVICES"]="1"
 from keras.layers import Input, CuDNNLSTM, Embedding, Dense, CuDNNGRU, LSTM
 from keras.models import Model
 from keras.losses import categorical_crossentropy, sparse_categorical_crossentropy
-from tied_embeddings import TiedEmbeddingsTransposed
-from qrnn import QRNN
-corpus = data.Corpus('assets/wikitext-103/')
+from keras_wiki_lm.model.tied_embeddings import TiedEmbeddingsTransposed
+from keras_wiki_lm.model.qrnn import QRNN
+corpus = Corpus('assets/wikitext-103/')
 pickle.dump(corpus,open('wikitext-103.corpus','wb'))
 
 corpus = pickle.load(open('wikitext-103.corpus','rb'))
