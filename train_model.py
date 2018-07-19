@@ -27,7 +27,7 @@ def train_language_model(corpus, epochs=5):
 
     early_stop = EarlyStopping(patience=2)
     check_point = ModelCheckpoint('model.hdf5', save_weights_only=True)
-    model = build_language_model()
+    model = build_language_model(num_words)
     model.fit_generator(train_gen,
                         steps_per_epoch=train_data.shape[0]//SEQ_LEN,
                         epochs=epochs,
