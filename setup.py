@@ -4,7 +4,7 @@ from setuptools import find_packages
 long_description = '''
 nnn'''
 
-setup(name='keras_lm',
+setup(name='keraslm',
       version='1.0.0',
       description='Keras wikipedia-based Language Model',
       long_description=long_description,
