@@ -12,11 +12,11 @@ from keras_lm.model.tied_embeddings import TiedEmbeddingsTransposed
 from keras_lm.model.qrnn import QRNN
 
 
-def build_language_model(num_words, dropout=0.1, dropouth=0.3, dropouti=0.2, dropoute=0.1, wdrop=0.5,
+def build_language_model(num_words,embedding_size=300, dropout=0.1, dropouth=0.3, dropouti=0.2, dropoute=0.1, wdrop=0.5,
                          tie_weights=True, use_qrnn=False, use_gpu=False):
 
     inp = Input(shape=(None,))
-    emb = Embedding(num_words,300)
+    emb = Embedding(num_words,embedding_size)
     emb_inp = emb(inp)
     emb_inp = Dropout(dropouti)(emb_inp)
 
@@ -28,7 +28,7 @@ def build_language_model(num_words, dropout=0.1, dropouth=0.3, dropouti=0.2, dro
         RnnUnit = CuDNNLSTM if use_gpu else LSTM
         rnn = RnnUnit(1024, return_sequences=True)(emb_inp)
         rnn = RnnUnit(1024, return_sequences=True)(rnn)
-        rnn = RnnUnit(300, return_sequences=True)(rnn)
+        rnn = RnnUnit(embedding_size, return_sequences=True)(rnn)
 
     if tie_weights:
         logits = TimeDistributed(TiedEmbeddingsTransposed(tied_to=emb, activation='softmax'))(rnn)

@@ -34,9 +34,7 @@ class ModelTrainer():
         return train_gen, valid_gen
 
     def train_language_model(self, batch_size=64, eval_batch_size=10, seq_length=50, epochs=5,
-                             embedding_size=300, use_gpu=True):
-        early_stop = EarlyStopping(patience=2)
-        check_point = ModelCheckpoint('assets/language_model.hdf5', save_weights_only=True)
+                             embedding_size=300, use_gpu=True, callbacks=None):
 
         K.clear_session()
         num_words = len(self.corpus.word2idx) +1
@@ -47,24 +45,31 @@ class ModelTrainer():
         train_gen, valid_gen = self._setup_generators(batch_size, eval_batch_size, seq_length)
 
         self.model.fit_generator(train_gen,
-                                 steps_per_epoch=len(self.corpus.train)//seq_length,
+                                 steps_per_epoch=len(self.corpus.train)//(seq_length * batch_size),
                                  epochs=epochs,
                                  validation_data=valid_gen,
-                                 validation_steps=len(self.corpus.valid)//seq_length,
-                                 callbacks=[early_stop,check_point])
+                                 validation_steps=len(self.corpus.valid)//(seq_length * batch_size),
+                                 callbacks=callbacks,
+                                 )
 
         return self.model
 
-    def evaluate_model(self, test_sentence, model, corpus):
+    def evaluate_model(self, test_sentence):
+        if self.model_description == 'fast':
+            raise NotImplementedError
+
         test_sentence = test_sentence.split()
         encoded_sentence = [self.corpus.word2idx[w] for w in test_sentence]
+
         for i in range(5):
-            pred = self.model.predict(encoded_sentence)
+            X, _ = next(BatchGenerator(encoded_sentence, 1, self.model_description,
+                        modify_seq_len=False).batch_gen(len(encoded_sentence)))
+            pred = self.model.predict(X)
             answer = np.argmax(pred,axis = 2)
             encoded_sentence.append([a[0] for a in answer][-1])
 
-        print(' '.join([corpus.idx2word[i[0]] for i in answer]))
-        print(' '.join([corpus.idx2word[i] for i in encoded_sentence]))
+            print(' '.join([corpus.idx2word[i[0]] for i in answer]))
+            print(' '.join([corpus.idx2word[i] for i in encoded_sentence]))
 
 
 def check_fast_model_output():
@@ -75,32 +80,31 @@ def check_fast_model_output():
     """
     corpus = pickle.load(open('assets/wikitext-103/wikitext-103.corpus','rb'))
 
-    model_trainer = ModelTrainer(build_fast_language_model, corpus)
-    train_gen, valid_gen = model_trainer._setup_generators(batch_size=64, eval_batch_size=64, seq_length=50)
+    model_trainer = ModelTrainer(build_fast_language_model, 'fast', corpus)
+    train_gen, valid_gen = model_trainer._setup_generators(batch_size=64, valid_batch_size=64, seq_length=50)
 
-    model_trainer.model.fit_generator(train_gen,
-                             steps_per_epoch=40,
-                             epochs=1,
-                             )
+    model = model_trainer.model_builder(num_words=len(corpus.word2idx) +1, embedding_size=300, use_gpu=False)
+    model.fit_generator(train_gen,
+                        steps_per_epoch=5,
+                        epochs=1,
+                       )
 
     X, y = next(train_gen)
-    print(X[0].shape)
-    print(X[1].shape)
-    print(len(y))
-    predictions = model_trainer.model.predict(X)
+    predictions = model.predict(X)
     print(predictions)
     print(predictions[predictions > 1])
 
 
 if __name__ == '__main__':
     os.environ["CUDA_VISIBLE_DEVICES"]="1"
-
-    #check_fast_model_output()
+    check_fast_model_output()
 
     corpus = pickle.load(open('assets/wikitext-103/wikitext-103.corpus','rb'))
     model_trainer = ModelTrainer(build_fast_language_model, 'fast', corpus)
-    language_model = model_trainer.train_language_model(batch_size=64, eval_batch_size = 10, seq_length=50, epochs=5)
+    callbacks = [EarlyStopping(patience=2),
+                 ModelCheckpoint('assets/language_model.hdf5', save_weights_only=True)
+                 ]
 
-
-
-    #model_trainer.evaluate_model('i am sick . hence i go to the', language_model, corpus)
+    language_model = model_trainer.train_language_model(batch_size=64, eval_batch_size = 10,
+                                                        seq_length=50, epochs=1,
+                                                        use_gpu=False, callbacks=callbacks)
