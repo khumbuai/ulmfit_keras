@@ -79,7 +79,7 @@ def build_fast_language_model(num_words, embedding_size=300, use_gpu=False):
     RnnUnit = CuDNNLSTM if use_gpu else LSTM
     rnn = RnnUnit(512, return_sequences=True)(emb_inp)
     #rnn = RnnUnit(1024, return_sequences=True)(rnn)
-    rnn = RnnUnit(embedding_size, return_sequences=True)(rnn)
+    rnn = RnnUnit(embedding_size, return_sequences=True, name='final_rnn_layer')(rnn)
 
     #TODO: cheesy way to perform the timedistributed dot product
     helper_tensor = Concatenate()([rnn, emb_target])
@@ -97,6 +97,24 @@ def build_fast_language_model(num_words, embedding_size=300, use_gpu=False):
     return model
 
 
+def fast_language_model_evaluation(model):
+    """
+    Builds a new model on top of the fast_language_model which can be used for evaluation of the predictions.
+    :param model: trained model instance of the model defined in build_fast_language_model
+    :return:
+    """
+    inp = [layer.input for layer in model.layers if layer.name == 'input'][0]
+    rnn_output = [layer.output for layer in model.layers if layer.name == 'final_rnn_layer'][0]
+    embedding_layer = [layer for layer in model.layers if layer.name == 'embedding'][0]
+
+    # no activation since we use argmax for prediction, probably faster.
+    out = TiedEmbeddingsTransposed(tied_to=embedding_layer, activation=None)(rnn_output)
+
+    model = Model(inputs=inp, outputs=out)
+    model.compile(loss='mse', optimizer=Adam(lr=3e-4, beta_1=0.8, beta_2=0.99))
+    return model
+
+
 if __name__ == '__main__':
     model = build_language_model(num_words=100)
     model.summary()
@@ -106,3 +124,6 @@ if __name__ == '__main__':
 
     fast_model = build_fast_language_model(num_words=100, embedding_size=300, use_gpu=False)
     fast_model.summary()
+
+    fast_evaluation = fast_language_model_evaluation(fast_model)
+    fast_evaluation.summary()

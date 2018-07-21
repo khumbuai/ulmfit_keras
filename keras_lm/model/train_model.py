@@ -55,17 +55,23 @@ class ModelTrainer():
         return self.model
 
     def evaluate_model(self, test_sentence):
+        model = self.model
+        model_description = self.model_description
+
         if self.model_description == 'fast':
-            raise NotImplementedError
+            #  we need to change to a different model where the output corresponds to the one-hot encoded words
+            from keras_lm.model.language_models import fast_language_model_evaluation
+            model = fast_language_model_evaluation(self.model)
+            model_description = 'normal'
 
         test_sentence = test_sentence.split()
         encoded_sentence = [self.corpus.word2idx[w] for w in test_sentence]
 
         for i in range(5):
-            X, _ = next(BatchGenerator(encoded_sentence, 1, self.model_description,
-                        modify_seq_len=False).batch_gen(len(encoded_sentence)))
-            pred = self.model.predict(X)
-            answer = np.argmax(pred,axis = 2)
+            X = np.reshape(encoded_sentence, (1, len(encoded_sentence)))
+
+            pred = model.predict(X)
+            answer = np.argmax(pred, axis=2)
             encoded_sentence.append([a[0] for a in answer][-1])
 
             print(' '.join([corpus.idx2word[i[0]] for i in answer]))
@@ -97,7 +103,7 @@ def check_fast_model_output():
 
 if __name__ == '__main__':
     os.environ["CUDA_VISIBLE_DEVICES"]="1"
-    check_fast_model_output()
+    #check_fast_model_output()
 
     corpus = pickle.load(open('assets/wikitext-103/wikitext-103.corpus','rb'))
     model_trainer = ModelTrainer(build_fast_language_model, 'fast', corpus)
@@ -108,3 +114,5 @@ if __name__ == '__main__':
     language_model = model_trainer.train_language_model(batch_size=64, eval_batch_size = 10,
                                                         seq_length=50, epochs=1,
                                                         use_gpu=False, callbacks=callbacks)
+
+    model_trainer.evaluate_model('i feel sick and go to the ')
