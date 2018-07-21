@@ -22,7 +22,6 @@ class ModelTrainer():
         self.model_builder = model_builder
         self.corpus = corpus
         self.model_description = model_description
-        self._setup_model()
 
     def _setup_generators(self, batch_size, valid_batch_size, seq_length):
         '''
@@ -34,15 +33,16 @@ class ModelTrainer():
 
         return train_gen, valid_gen
 
-    def _setup_model(self):
-        K.clear_session()
-        num_words = len(self.corpus.word2idx) +1
-        self.model = self.model_builder(num_words)
-        self.model.summary()
-
-    def train_language_model(self, batch_size=64, eval_batch_size=10, seq_length=50, epochs=5):
+    def train_language_model(self, batch_size=64, eval_batch_size=10, seq_length=50, epochs=5,
+                             embedding_size=300, use_gpu=True):
         early_stop = EarlyStopping(patience=2)
         check_point = ModelCheckpoint('assets/language_model.hdf5', save_weights_only=True)
+
+        K.clear_session()
+        num_words = len(self.corpus.word2idx) +1
+        self.model = self.model_builder(num_words, embedding_size=embedding_size, use_gpu=use_gpu)
+        self.model.summary()
+
 
         train_gen, valid_gen = self._setup_generators(batch_size, eval_batch_size, seq_length)
 
