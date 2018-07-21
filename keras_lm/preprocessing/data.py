@@ -1,11 +1,11 @@
-import os
-import numpy as np
-from collections import Counter
-from tqdm import tqdm
-import pickle
 import logging
+import os
+import pickle
+from collections import Counter
 
-from keras_wiki_lm.preprocessing.utils import maybe_download
+import numpy as np
+from tqdm import tqdm
+
 
 class Dictionary(object):
     def __init__(self):
@@ -86,12 +86,6 @@ def get_wikitext103_corpus():
     :return: Instance of Corpus, containing the wikitext-103 dataset
     :rtype Corpus:
     '''
-    absolute_directory = os.path.dirname(os.path.abspath(__file__))
-    #TODO: consistent way of setting the filepath
-    corpus_directory = os.path.join(absolute_directory, 'assets/wikitext-103/')
-    corpus_filename = 'wikitext-103.corpus'
-    filepath = os.path.join(corpus_directory, corpus_filename)
-
     #if not os.path.exists(corpus_directory):
     #    os.makedirs(corpus_directory)
     #    corpus_files={'https://drive.google.com/open?id=1dmOWRaDm0R6dSN2rwPnL7l4Ij2EDDhk6': 'train.txt',
@@ -102,12 +96,12 @@ def get_wikitext103_corpus():
     #                       source_url=url,
     #                       work_directory=corpus_directory)
 
-    if not os.path.exists(filepath):
+    if not os.path.exists('assets/wikitext-103/'):
         corpus = Corpus('assets/wikitext-103/')
-        pickle.dump(corpus,open('wikitext-103.corpus','wb'))
+        pickle.dump(corpus,open('assets/wikitext-103/wikitext-103.corpus','wb'))
         logging.info('Corpus successfully created')
 
-    return pickle.load(open('wikitext-103.corpus','rb'))
+    return pickle.load(open('assets/wikitext-103/wikitext-103.corpus','rb'))
 
 
 if __name__ == '__main__':
