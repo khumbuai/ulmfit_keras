@@ -45,7 +45,10 @@ class BatchGenerator():
         """
         start = (pos + 1) % len(self.tokenized_text)
         end = (pos + 1 + seq_len) % len(self.tokenized_text)
-
+        if start > end:  # text sequence is exhausted and rolled over to the start again
+            start = len(self.tokenized_text) - seq_len
+            end = len(self.tokenized_text)
+           
         data = self.tokenized_text[start -1: end - 1]
         target = self.tokenized_text[start:end] if self.model_description in ['normal', 'fast'] else self.tokenized_text[end - 1]
         # need to expand the dimension, such that Y has shape (batch_size, seq_len, 1) (for normal model),
@@ -88,10 +91,11 @@ class BatchGenerator():
         """
         pos = 0  # Points to the start of the batch
         while True:
+            batch_seq_len = seq_len
             if self.modify_seq_len:
-                seq_len = self._random_modify_seq_len(seq_len)
+                batch_seq_len = self._random_modify_seq_len(batch_seq_len)
 
-            X, Y = self.generate_one_batch(pos, seq_len)
+            X, Y = self.generate_one_batch(pos, batch_seq_len)
             yield X, Y
 
             pos = (pos + seq_len * self.batch_size) % len(self.tokenized_text)
