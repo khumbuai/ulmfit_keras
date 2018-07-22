@@ -98,7 +98,7 @@ class BatchGenerator():
             X, Y = self.generate_one_batch(pos, batch_seq_len)
             yield X, Y
 
-            pos = (pos + seq_len * self.batch_size) % len(self.tokenized_text)
+            pos = (pos + batch_seq_len * self.batch_size) % len(self.tokenized_text)
 
 
 if __name__ == '__main__':
