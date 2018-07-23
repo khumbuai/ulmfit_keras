@@ -16,8 +16,8 @@ def build_language_model(num_words, embedding_size=300, rnn_sizes=(1024, 512),
                          dropout=0.1, dropouth=0.3, dropouti=0.2, dropoute=0.1, wdrop=0.5,
                          tie_weights=True, use_qrnn=False, use_gpu=True):
 
-    inp = Input(shape=(None,))
-    emb = Embedding(num_words,embedding_size)
+    inp = Input(shape=(None,), name='input')
+    emb = Embedding(num_words, embedding_size, name='embedding')
     emb_inp = emb(inp)
     emb_inp = Dropout(dropouti)(emb_inp)
 
