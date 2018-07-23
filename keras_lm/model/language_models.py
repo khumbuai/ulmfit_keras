@@ -48,12 +48,12 @@ def build_many_to_one_language_model(num_words, embedding_size=300, use_qrnn=Fal
     if use_qrnn:
         rnn = QRNN(1024, return_sequences=True, window_size=2)(emb_inp)
         rnn = QRNN(1024, return_sequences=True, window_size=1)(rnn)
-        rnn = QRNN(embedding_size, return_sequences=True,window_size=1, name='final_rnn_layer')(rnn)
+        rnn = QRNN(embedding_size, return_sequences=False,window_size=1, name='final_rnn_layer')(rnn)
     else:
         RnnUnit = CuDNNLSTM if use_gpu else LSTM
         rnn = RnnUnit(1024, return_sequences=True)(emb_inp)
         rnn = RnnUnit(1024, return_sequences=True)(rnn)
-        rnn = RnnUnit(embedding_size, return_sequences=True, name='final_rnn_layer')(rnn)
+        rnn = RnnUnit(embedding_size, return_sequences=False, name='final_rnn_layer')(rnn)
 
     out = TiedEmbeddingsTransposed(tied_to=emb, activation='softmax')(rnn)
     model = Model(inputs=inp, outputs=out)
