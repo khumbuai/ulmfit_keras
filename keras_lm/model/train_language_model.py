@@ -62,10 +62,16 @@ class ModelTrainer():
 
             pred = model.predict(X)
             answer = np.argmax(pred, axis=2)
-            encoded_sentence.append([a[0] for a in answer][-1])
 
-            print(' '.join([self.corpus.idx2word[i[0]] for i in answer]))
-            print(' '.join([self.corpus.idx2word[i] for i in encoded_sentence]))
+            predicted_idx = answer[0][-2]
+
+            print(pred[0, 0, predicted_idx])
+            print(pred[0, 0, predicted_idx + 6])
+
+
+            encoded_sentence.append(predicted_idx)
+
+        print(' '.join([self.corpus.idx2word[i] for i in encoded_sentence]))
 
 
 def check_fast_model_output():
