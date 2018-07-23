@@ -5,7 +5,6 @@ class BatchGenerator():
 
     def __init__(self, tokenized_text, batch_size, model_description, modify_seq_len=True):
         """
-
         :param array tokenized_text: array of encoded text
         :param batch_size:
         :param str model_description: Names the model, for which we need batches
@@ -45,7 +44,7 @@ class BatchGenerator():
         """
         start = (pos + 1) % len(self.tokenized_text)
         end = (pos + 1 + seq_len) % len(self.tokenized_text)
-        if start > end:  # text sequence is exhausted and rolled over to the start again
+        if start > end:  # text sequence is exhausted -> roll over to the start again
             start = len(self.tokenized_text) - seq_len
             end = len(self.tokenized_text)
            

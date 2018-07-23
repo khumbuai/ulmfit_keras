@@ -12,14 +12,13 @@ from keras_lm.preprocessing.batch_generators import BatchGenerator
 
 class ModelTrainer():
 
-    def __init__(self, model_builder, model_description, corpus):
+    def __init__(self, model, model_description, corpus):
         """
-
-        :param model_builder:
+        :param model: Keras model instance
         :param str model_description: One of ['normal', 'many_to_one', 'fast'], determines which batch generator to use
         :param corpus:
         """
-        self.model_builder = model_builder
+        self.model = model
         self.corpus = corpus
         self.model_description = model_description
 
@@ -33,14 +32,7 @@ class ModelTrainer():
 
         return train_gen, valid_gen
 
-    def train_language_model(self, batch_size=64, eval_batch_size=10, seq_length=50, epochs=5,
-                             embedding_size=300, use_gpu=True, callbacks=None):
-
-        K.clear_session()
-        num_words = len(self.corpus.word2idx) +1
-        self.model = self.model_builder(num_words, embedding_size=embedding_size, use_gpu=use_gpu)
-        self.model.summary()
-
+    def train_language_model(self, batch_size=64, eval_batch_size=10, seq_length=50, epochs=5, callbacks=None):
 
         train_gen, valid_gen = self._setup_generators(batch_size, eval_batch_size, seq_length)
 
@@ -56,13 +48,11 @@ class ModelTrainer():
 
     def evaluate_model(self, test_sentence):
         model = self.model
-        model_description = self.model_description
 
         if self.model_description == 'fast':
             #  we need to change to a different model where the output corresponds to the one-hot encoded words
             from keras_lm.model.language_models import fast_language_model_evaluation
             model = fast_language_model_evaluation(self.model)
-            model_description = 'normal'
 
         test_sentence = test_sentence.split()
         encoded_sentence = [self.corpus.word2idx[w] for w in test_sentence]
@@ -89,11 +79,10 @@ def check_fast_model_output():
     model_trainer = ModelTrainer(build_fast_language_model, 'fast', corpus)
     train_gen, valid_gen = model_trainer._setup_generators(batch_size=64, valid_batch_size=64, seq_length=50)
 
-    model = model_trainer.model_builder(num_words=len(corpus.word2idx) +1, embedding_size=300, use_gpu=False)
-    model.fit_generator(train_gen,
+    model_trainer.model.fit_generator(train_gen,
                         steps_per_epoch=5,
                         epochs=1,
-                       )
+                        )
 
     X, y = next(train_gen)
     predictions = model.predict(X)
@@ -106,13 +95,19 @@ if __name__ == '__main__':
     #check_fast_model_output()
 
     corpus = pickle.load(open('assets/wikitext-103/wikitext-103.corpus','rb'))
-    model_trainer = ModelTrainer(build_fast_language_model, 'fast', corpus)
+
+    K.clear_session()
+    num_words = len(corpus.word2idx) +1
+    model = build_fast_language_model(num_words, embedding_size=300, use_gpu=True)
+    model.summary()
+
+    model_trainer = ModelTrainer(model, 'fast', corpus)
     callbacks = [EarlyStopping(patience=2),
                  ModelCheckpoint('assets/language_model.hdf5', save_weights_only=True)
                  ]
 
     language_model = model_trainer.train_language_model(batch_size=64, eval_batch_size = 10,
                                                         seq_length=50, epochs=1,
-                                                        use_gpu=False, callbacks=callbacks)
+                                                        callbacks=callbacks)
 
     model_trainer.evaluate_model('i feel sick and go to the ')

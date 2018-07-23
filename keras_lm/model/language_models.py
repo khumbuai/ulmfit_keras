@@ -12,8 +12,8 @@ from keras_lm.model.tied_embeddings import TiedEmbeddingsTransposed
 from keras_lm.model.qrnn import QRNN
 
 
-def build_language_model(num_words,embedding_size=300, dropout=0.1, dropouth=0.3, dropouti=0.2, dropoute=0.1, wdrop=0.5,
-                         tie_weights=True, use_qrnn=False, use_gpu=False):
+def build_language_model(num_words, embedding_size=300, dropout=0.1, dropouth=0.3, dropouti=0.2, dropoute=0.1, wdrop=0.5,
+                         tie_weights=True, use_qrnn=False, use_gpu=True):
 
     inp = Input(shape=(None,))
     emb = Embedding(num_words,embedding_size)
@@ -23,12 +23,12 @@ def build_language_model(num_words,embedding_size=300, dropout=0.1, dropouth=0.3
     if use_qrnn:
         rnn = QRNN(1024, return_sequences=True, window_size=2)(emb_inp)
         rnn = QRNN(1024, return_sequences=True, window_size=1)(rnn)
-        rnn = QRNN(300, return_sequences=True,window_size=1)(rnn)
+        rnn = QRNN(300, return_sequences=True,window_size=1, name='final_rnn_layer')(rnn)
     else:
         RnnUnit = CuDNNLSTM if use_gpu else LSTM
         rnn = RnnUnit(1024, return_sequences=True)(emb_inp)
         rnn = RnnUnit(1024, return_sequences=True)(rnn)
-        rnn = RnnUnit(embedding_size, return_sequences=True)(rnn)
+        rnn = RnnUnit(embedding_size, return_sequences=True, name='final_rnn_layer')(rnn)
 
     if tie_weights:
         logits = TimeDistributed(TiedEmbeddingsTransposed(tied_to=emb, activation='softmax'))(rnn)
@@ -40,18 +40,21 @@ def build_language_model(num_words,embedding_size=300, dropout=0.1, dropouth=0.3
     return model
 
 
-def build_many_to_one_language_model(num_words, embedding_size=300, use_gpu=False):
-    RnnUnit = CuDNNLSTM if use_gpu else LSTM
+def build_many_to_one_language_model(num_words, embedding_size=300, use_qrnn=False, use_gpu=True):
     inp = Input(shape=(None,))
     emb = Embedding(num_words, embedding_size)
     emb_inp = emb(inp)
-    rnn = RnnUnit(1024, return_sequences=True)(emb_inp)
-    rnn = RnnUnit(1024, return_sequences=True)(rnn)
-    rnn = RnnUnit(embedding_size)(rnn)
-    #rnn = QRNN(256, return_sequences=True)(emb_inp)
-    #rnn = QRNN(256)(rnn)
-    #den = Dense(SEQ_LEN, activation='relu')(rnn)
-    #out = TimeDistributed(Dense(num_words, activation='softmax'))(rnn)
+
+    if use_qrnn:
+        rnn = QRNN(1024, return_sequences=True, window_size=2)(emb_inp)
+        rnn = QRNN(1024, return_sequences=True, window_size=1)(rnn)
+        rnn = QRNN(300, return_sequences=True,window_size=1, name='final_rnn_layer')(rnn)
+    else:
+        RnnUnit = CuDNNLSTM if use_gpu else LSTM
+        rnn = RnnUnit(1024, return_sequences=True)(emb_inp)
+        rnn = RnnUnit(1024, return_sequences=True)(rnn)
+        rnn = RnnUnit(embedding_size, return_sequences=True, name='final_rnn_layer')(rnn)
+
     out = TiedEmbeddingsTransposed(tied_to=emb, activation='softmax')(rnn)
     model = Model(inputs=inp, outputs=out)
     #model = multi_gpu_model(model, gpus=2)
@@ -59,7 +62,8 @@ def build_many_to_one_language_model(num_words, embedding_size=300, use_gpu=Fals
     return model
 
 
-def build_fast_language_model(num_words, embedding_size=300, use_gpu=False):
+def build_fast_language_model(num_words, embedding_size=300, dropouti=0.2,
+                              use_qrnn=False, use_gpu=True):
     """
     Adatped from http://adventuresinmachinelearning.com/word2vec-keras-tutorial/
     :param num_words:
@@ -74,14 +78,21 @@ def build_fast_language_model(num_words, embedding_size=300, use_gpu=False):
     emb = Embedding(num_words, embedding_size, name='embedding',  embeddings_constraint=unit_norm(axis=1))
 
     emb_inp = emb(inp)
+    emb_inp = Dropout(dropouti)(emb_inp)
+
     emb_target = emb(inp_target)
 
-    RnnUnit = CuDNNLSTM if use_gpu else LSTM
-    rnn = RnnUnit(512, return_sequences=True)(emb_inp)
-    #rnn = RnnUnit(1024, return_sequences=True)(rnn)
-    rnn = RnnUnit(embedding_size, return_sequences=True, name='final_rnn_layer')(rnn)
+    if use_qrnn:
+        rnn = QRNN(1024, return_sequences=True, window_size=2)(emb_inp)
+        rnn = QRNN(512, return_sequences=True, window_size=1)(rnn)
+        rnn = QRNN(300, return_sequences=True, window_size=1, name='final_rnn_layer')(rnn)
+    else:
+        RnnUnit = CuDNNLSTM if use_gpu else LSTM
+        rnn = RnnUnit(1024, return_sequences=True)(emb_inp)
+        rnn = RnnUnit(512, return_sequences=True)(rnn)
+        rnn = RnnUnit(embedding_size, return_sequences=True, name='final_rnn_layer')(rnn)
 
-    #TODO: cheesy way to perform the timedistributed dot product
+    #TODO: find a cleaner way to perform the timedistributed dot product
     helper_tensor = Concatenate()([rnn, emb_target])
     reshaped = Reshape((-1, embedding_size, 2))(helper_tensor)
 

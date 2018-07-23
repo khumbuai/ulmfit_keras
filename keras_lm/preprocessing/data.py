@@ -56,8 +56,6 @@ class Corpus(object):
         words = [w[0] for w in counter.most_common(self.max_vocab)]
         self.word2idx = {w:i for i,w in enumerate(words)}
 
-
-
     def tokenize(self, path, num_tokens):
         #"Tokenizes a text file."
         print(path)
