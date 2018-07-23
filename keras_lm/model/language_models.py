@@ -12,7 +12,8 @@ from keras_lm.model.tied_embeddings import TiedEmbeddingsTransposed
 from keras_lm.model.qrnn import QRNN
 
 
-def build_language_model(num_words, embedding_size=300, dropout=0.1, dropouth=0.3, dropouti=0.2, dropoute=0.1, wdrop=0.5,
+def build_language_model(num_words, embedding_size=300, rnn_sizes=(1024, 512),
+                         dropout=0.1, dropouth=0.3, dropouti=0.2, dropoute=0.1, wdrop=0.5,
                          tie_weights=True, use_qrnn=False, use_gpu=True):
 
     inp = Input(shape=(None,))
@@ -21,13 +22,15 @@ def build_language_model(num_words, embedding_size=300, dropout=0.1, dropouth=0.
     emb_inp = Dropout(dropouti)(emb_inp)
 
     if use_qrnn:
-        rnn = QRNN(1024, return_sequences=True, window_size=2)(emb_inp)
-        rnn = QRNN(1024, return_sequences=True, window_size=1)(rnn)
-        rnn = QRNN(embedding_size, return_sequences=True,window_size=1, name='final_rnn_layer')(rnn)
+        rnn = QRNN(rnn_sizes[0], return_sequences=True, window_size=2)(emb_inp)
+        for rnn_size in rnn_sizes[1:]:
+            rnn = QRNN(rnn_size, return_sequences=True, window_size=1)(rnn)
+        rnn = QRNN(embedding_size, return_sequences=True, window_size=1, name='final_rnn_layer')(rnn)
     else:
         RnnUnit = CuDNNLSTM if use_gpu else LSTM
-        rnn = RnnUnit(1024, return_sequences=True)(emb_inp)
-        rnn = RnnUnit(1024, return_sequences=True)(rnn)
+        rnn = RnnUnit(rnn_sizes[0], return_sequences=True)(emb_inp)
+        for rnn_size in rnn_sizes[1:]:
+            rnn = RnnUnit(rnn_size, return_sequences=True)(rnn)
         rnn = RnnUnit(embedding_size, return_sequences=True, name='final_rnn_layer')(rnn)
 
     if tie_weights:
@@ -62,7 +65,7 @@ def build_many_to_one_language_model(num_words, embedding_size=300, use_qrnn=Fal
     return model
 
 
-def build_fast_language_model(num_words, embedding_size=300, dropouti=0.2,
+def build_fast_language_model(num_words, embedding_size=300, dropouti=0.2, rnn_sizes=(1024, 512),
                               use_qrnn=False, use_gpu=True):
     """
     Adatped from http://adventuresinmachinelearning.com/word2vec-keras-tutorial/
@@ -83,13 +86,15 @@ def build_fast_language_model(num_words, embedding_size=300, dropouti=0.2,
     emb_target = emb(inp_target)
 
     if use_qrnn:
-        rnn = QRNN(1024, return_sequences=True, window_size=2)(emb_inp)
-        rnn = QRNN(512, return_sequences=True, window_size=1)(rnn)
+        rnn = QRNN(rnn_sizes[0], return_sequences=True, window_size=2)(emb_inp)
+        for rnn_size in rnn_sizes[1:]:
+            rnn = QRNN(rnn_size, return_sequences=True, window_size=1)(rnn)
         rnn = QRNN(embedding_size, return_sequences=True, window_size=1, name='final_rnn_layer')(rnn)
     else:
         RnnUnit = CuDNNLSTM if use_gpu else LSTM
-        rnn = RnnUnit(1024, return_sequences=True)(emb_inp)
-        rnn = RnnUnit(512, return_sequences=True)(rnn)
+        rnn = RnnUnit(rnn_sizes[0], return_sequences=True)(emb_inp)
+        for rnn_size in rnn_sizes[1:]:
+            rnn = RnnUnit(rnn_size, return_sequences=True)(rnn)
         rnn = RnnUnit(embedding_size, return_sequences=True, name='final_rnn_layer')(rnn)
 
     #TODO: find a cleaner way to perform the timedistributed dot product
