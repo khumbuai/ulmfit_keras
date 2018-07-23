@@ -23,7 +23,7 @@ def build_language_model(num_words, embedding_size=300, dropout=0.1, dropouth=0.
     if use_qrnn:
         rnn = QRNN(1024, return_sequences=True, window_size=2)(emb_inp)
         rnn = QRNN(1024, return_sequences=True, window_size=1)(rnn)
-        rnn = QRNN(300, return_sequences=True,window_size=1, name='final_rnn_layer')(rnn)
+        rnn = QRNN(embedding_size, return_sequences=True,window_size=1, name='final_rnn_layer')(rnn)
     else:
         RnnUnit = CuDNNLSTM if use_gpu else LSTM
         rnn = RnnUnit(1024, return_sequences=True)(emb_inp)
@@ -48,7 +48,7 @@ def build_many_to_one_language_model(num_words, embedding_size=300, use_qrnn=Fal
     if use_qrnn:
         rnn = QRNN(1024, return_sequences=True, window_size=2)(emb_inp)
         rnn = QRNN(1024, return_sequences=True, window_size=1)(rnn)
-        rnn = QRNN(300, return_sequences=True,window_size=1, name='final_rnn_layer')(rnn)
+        rnn = QRNN(embedding_size, return_sequences=True,window_size=1, name='final_rnn_layer')(rnn)
     else:
         RnnUnit = CuDNNLSTM if use_gpu else LSTM
         rnn = RnnUnit(1024, return_sequences=True)(emb_inp)
@@ -85,7 +85,7 @@ def build_fast_language_model(num_words, embedding_size=300, dropouti=0.2,
     if use_qrnn:
         rnn = QRNN(1024, return_sequences=True, window_size=2)(emb_inp)
         rnn = QRNN(512, return_sequences=True, window_size=1)(rnn)
-        rnn = QRNN(300, return_sequences=True, window_size=1, name='final_rnn_layer')(rnn)
+        rnn = QRNN(embedding_size, return_sequences=True, window_size=1, name='final_rnn_layer')(rnn)
     else:
         RnnUnit = CuDNNLSTM if use_gpu else LSTM
         rnn = RnnUnit(1024, return_sequences=True)(emb_inp)
