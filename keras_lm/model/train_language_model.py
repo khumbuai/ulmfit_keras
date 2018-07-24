@@ -104,7 +104,7 @@ if __name__ == '__main__':
 
     K.clear_session()
     num_words = len(corpus.word2idx) +1
-    model = build_fast_language_model(num_words, embedding_size=300, use_gpu=True)
+    model = build_fast_language_model(num_words, embedding_size=300, use_gpu=False)
     model.summary()
 
     model_trainer = ModelTrainer(model, 'fast', corpus)
@@ -112,7 +112,7 @@ if __name__ == '__main__':
                  ModelCheckpoint('assets/language_model.hdf5', save_weights_only=True)
                  ]
 
-    language_model = model_trainer.train_language_model(batch_size=64, eval_batch_size = 10,
+    language_model = model_trainer.train_language_model(batch_size=64, eval_batch_size=10,
                                                         seq_length=50, epochs=1,
                                                         callbacks=callbacks)
 

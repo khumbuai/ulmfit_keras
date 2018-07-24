@@ -33,7 +33,7 @@ class BatchGenerator():
         Y = np.squeeze(Y)
         # !!!! Be carful not to convert the return value of [X, Y[ to a numpy array, as it will then throw an error in the fit method!
         # https://stackoverflow.com/questions/46450184/keras-multiple-inputs-for-fit-generator-using-flow-from-directory
-        return [X, Y], np.ones_like(X)
+        return [X, Y], [np.ones_like(X), np.zeros_like(X)]
 
     def get_sample(self, pos, seq_len):
         """
@@ -76,11 +76,11 @@ class BatchGenerator():
             pos = (pos + seq_len) % len(self.tokenized_text)
 
         X = np.array(X)
-
+        Y = np.array(Y)
         if self.model_description == 'fast':
             X, Y = self._reshape_sample(X, Y)
 
-        return X, np.array(Y)
+        return X, Y
 
     def batch_gen(self, seq_len):
         """
