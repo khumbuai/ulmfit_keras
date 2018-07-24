@@ -65,7 +65,6 @@ def build_many_to_one_language_model(num_words, embedding_size=300, use_qrnn=Fal
     return model
 
 
-# TODO add another connection with inp * rnn(inp) which should be 0....
 def build_fast_language_model(num_words, embedding_size=300, dropouti=0.2, rnn_sizes=(1024, 512),
                               use_qrnn=False, use_gpu=True):
     """
@@ -98,9 +97,9 @@ def build_fast_language_model(num_words, embedding_size=300, dropouti=0.2, rnn_s
             rnn = RnnUnit(rnn_size, return_sequences=True)(rnn)
         rnn = RnnUnit(embedding_size, return_sequences=True, name='final_rnn_layer')(rnn)
 
-    def scalar_product(rnn, emb_target):
+    def scalar_product(vector1, vector2):
         #TODO: find a cleaner way to perform the timedistributed dot product
-        helper_tensor = Concatenate()([rnn, emb_target])
+        helper_tensor = Concatenate()([vector1, vector2])
         reshaped = Reshape((-1, embedding_size, 2))(helper_tensor)
 
         def tensor_product(x):
@@ -111,7 +110,9 @@ def build_fast_language_model(num_words, embedding_size=300, dropouti=0.2, rnn_s
         return Lambda(tensor_product)(reshaped)  # similarity is between -1 and 1
 
     similarity = scalar_product(rnn, emb_target)
-    dissimilarity = scalar_product(emb_inp, emb_target)  # a way to implement Skip-Gram negative sampling
+    # dissimilarity implements Skip-Gram negative sampling.
+    # The current word embedding should be orthogonal to the word embedding of the following word.
+    dissimilarity = scalar_product(emb_inp, emb_target)
 
     model = Model(inputs=[inp, inp_target], outputs=[similarity, dissimilarity])
     model.compile(loss='mse', optimizer=Adam(lr=3e-4, beta_1=0.8, beta_2=0.99))
