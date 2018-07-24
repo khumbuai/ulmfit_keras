@@ -24,20 +24,25 @@ class BatchGenerator():
 
     def _reshape_sample(self, X, Y):
         """
-        Reshapes X, Y such that it is valid input for the fast model architecture.
+        Reshapes the (X, Y) batch such that it is valid input for the fast model architecture.
         :param array X: shape (batch_size, sequence_length)
         :param array Y: shape (batch_size, sequence_length, 1)
         :return:
         :rtype array:
         """
         Y = np.squeeze(Y)
-        # !!!! Be carful not to convert the return value of [X, Y[ to a numpy array, as it will then throw an error in the fit method!
+        # !!!! Be carful not to convert the return value of [X, Y] to a numpy array, as it will then throw an error in the fit method!
         # https://stackoverflow.com/questions/46450184/keras-multiple-inputs-for-fit-generator-using-flow-from-directory
-        return [X, Y], [np.ones_like(X), np.zeros_like(X)]
+
+        # targets[0] -> dot product between rnn output and next word embedding.
+        # target[1] -> dot product between current word embedding and next word embedding.
+        # see build_fast_language_model in language models for model architecture
+        targets = [np.ones_like(X), np.zeros_like(X)]
+        return [X, Y], targets
 
     def get_sample(self, pos, seq_len):
         """
-        Returns one X, y pair
+        Returns one x, y pair
         :param pos:
         :param seq_len:
         :return:

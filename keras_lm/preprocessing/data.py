@@ -64,7 +64,7 @@ class Corpus(object):
 
         # Tokenize file content
         with open(path, 'r') as f:
-            ids = np.repeat(-1,num_tokens)
+            ids = np.repeat(-1, num_tokens)
             token = 0
             for line in tqdm(f):
                 words = line.split() + ['<eos>']

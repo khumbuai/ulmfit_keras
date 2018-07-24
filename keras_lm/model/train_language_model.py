@@ -46,7 +46,14 @@ class ModelTrainer():
 
         return self.model
 
-    def evaluate_model(self, test_sentence):
+    def evaluate_model(self, test_sentence, num_predictions=5):
+        """
+        Visual preidictions of the language model. The test_sentence is appended with num_predictions words,
+        which are predicted as the next words from the model.
+        :param str test_sentence:
+        :param int num_predictions:
+        :return: None
+        """
         model = self.model
 
         if self.model_description == 'fast':
@@ -57,7 +64,7 @@ class ModelTrainer():
         test_sentence = test_sentence.split()
         encoded_sentence = [self.corpus.word2idx[w] for w in test_sentence]
 
-        for i in range(5):
+        for i in range(num_predictions):
             X = np.reshape(encoded_sentence, (1, len(encoded_sentence)))
 
             pred = model.predict(X)
