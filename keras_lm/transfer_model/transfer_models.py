@@ -8,9 +8,9 @@ from keras.preprocessing.sequence import pad_sequences
 import pickle
 from collections import defaultdict
 
-from keras_lm.language_model.train_language_model import ModelTrainer
+from keras_lm.language_model.train import ModelTrainer
 from keras_lm.transfer_model.multilayer_optimizer import LRMultiplierSGD
-from keras_lm.language_model.language_models import build_fast_language_model
+from keras_lm.language_model.model import build_fast_language_model
 
 
 def tokenize(df, word2idx, maxlen=50):
