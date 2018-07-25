@@ -1,15 +1,15 @@
 import os
-import numpy as np
 
 os.environ["CUDA_VISIBLE_DEVICES"]="1"
-from keras.layers import Input, CuDNNLSTM, LSTM, Embedding, Dense, Reshape, LSTM, TimeDistributed, Dropout, Lambda, Dot, dot, Concatenate
+from keras.layers import Input, CuDNNLSTM, Embedding, Dense, Reshape, LSTM, TimeDistributed, Dropout, Lambda, \
+    Concatenate
 from keras.models import Model
 from keras.optimizers import Adam
 import keras.backend as K
 from keras.constraints import unit_norm
 
-from keras_lm.model.tied_embeddings import TiedEmbeddingsTransposed
-from keras_lm.model.qrnn import QRNN
+from keras_lm.language_model.tied_embeddings import TiedEmbeddingsTransposed
+from keras_lm.language_model.qrnn import QRNN
 
 
 def build_language_model(num_words, embedding_size=300, rnn_sizes=(1024, 512),

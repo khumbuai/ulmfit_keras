@@ -1,12 +1,11 @@
-from keras.callbacks import EarlyStopping, ModelCheckpoint
-import keras.backend as K
-from keras.callbacks import EarlyStopping, ModelCheckpoint
-
 import os
-import numpy as np
 import pickle
 
-from keras_lm.model.language_models import build_language_model, build_fast_language_model, build_many_to_one_language_model
+import keras.backend as K
+import numpy as np
+from keras.callbacks import EarlyStopping, ModelCheckpoint
+
+from keras_lm.language_model.language_models import build_fast_language_model
 from keras_lm.preprocessing.batch_generators import BatchGenerator
 
 
@@ -58,7 +57,7 @@ class ModelTrainer():
 
         if self.model_description == 'fast':
             #  we need to change to a different model where the output corresponds to the one-hot encoded words
-            from keras_lm.model.language_models import fast_language_model_evaluation
+            from keras_lm.language_model.language_models import fast_language_model_evaluation
             model = fast_language_model_evaluation(self.model)
 
         test_sentence = test_sentence.split()
@@ -71,11 +70,6 @@ class ModelTrainer():
             answer = np.argmax(pred, axis=2)
 
             predicted_idx = answer[0][-2]
-
-            print(pred[0, 0, predicted_idx])
-            print(pred[0, 0, predicted_idx + 6])
-
-
             encoded_sentence.append(predicted_idx)
 
         print(' '.join([self.corpus.idx2word[i] for i in encoded_sentence]))
