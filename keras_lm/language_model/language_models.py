@@ -67,70 +67,6 @@ def build_many_to_one_language_model(num_words, embedding_size=300, use_qrnn=Fal
     return model
 
 
-def build_fast_language_model(num_words, embedding_size=300, dropouti=0.2, rnn_sizes=(1024, 512),
-                              use_qrnn=False, use_gpu=True):
-    """
-    Adatped from http://adventuresinmachinelearning.com/word2vec-keras-tutorial/
-    :param num_words:
-    :param embedding_size:
-    :param use_gpu:
-    :return:
-    """
-    # create some input variables
-    inp = Input(shape=(None,), name='input')
-    inp_target = Input(shape=(None,), name='target')  # this is the shifted sequence
-    inp_neg_sample = Input(shape=(None,), name='negative_sample')
-
-    emb = Embedding(num_words, embedding_size, name='embedding',  embeddings_constraint=unit_norm(axis=1))
-
-    emb_inp = emb(inp)
-    emb_inp = Dropout(dropouti)(emb_inp)
-
-    emb_target = emb(inp_target)
-
-    emb_neg_sample = emb(inp_neg_sample)
-
-    if use_qrnn:
-        rnn = QRNN(rnn_sizes[0], return_sequences=True, window_size=2)(emb_inp)
-        for rnn_size in rnn_sizes[1:]:
-            rnn = QRNN(rnn_size, return_sequences=True, window_size=1)(rnn)
-        rnn = QRNN(embedding_size, return_sequences=True, window_size=1, name='final_rnn_layer')(rnn)
-    else:
-        RnnUnit = CuDNNLSTM if use_gpu else LSTM
-        rnn = RnnUnit(rnn_sizes[0], return_sequences=True)(emb_inp)
-        for rnn_size in rnn_sizes[1:]:
-            rnn = RnnUnit(rnn_size, return_sequences=True)(rnn)
-        rnn = RnnUnit(embedding_size, return_sequences=True, name='final_rnn_layer')(rnn)
-
-    def scalar_product(vector1, vector2):
-        return Lambda(lambda x: K.sum(x[0] * x[1], axis=-1, keepdims=False))([vector1, vector2])
-
-    similarity = scalar_product(rnn, emb_target)
-    # dissimilarity implements Skip-Gram negative sampling. Assure that the different words have different word vectors.
-    dissimilarity = scalar_product(emb_inp, emb_neg_sample)
-
-    model = Model(inputs=[inp, inp_target, inp_neg_sample], outputs=[similarity, dissimilarity])
-    model.compile(loss='mse', optimizer=Adam(lr=3e-4, beta_1=0.8, beta_2=0.99))
-    return model
-
-
-def fast_language_model_evaluation(model):
-    """
-    Builds a new model on top of the fast_language_model which can be used for evaluation of the predictions.
-    :param model: trained model instance of the model defined in build_fast_language_model
-    :return:
-    """
-    inp = [layer.input for layer in model.layers if layer.name == 'input'][0]
-    rnn_output = [layer.output for layer in model.layers if layer.name == 'final_rnn_layer'][0]
-    embedding_layer = [layer for layer in model.layers if layer.name == 'embedding'][0]
-
-    # no activation since we use argmax for prediction, probably faster.
-    out = TiedEmbeddingsTransposed(tied_to=embedding_layer, activation=None)(rnn_output)
-
-    model = Model(inputs=inp, outputs=out)
-    model.compile(loss='mse', optimizer=Adam(lr=3e-4, beta_1=0.8, beta_2=0.99))
-    return model
-
 
 if __name__ == '__main__':
     model = build_language_model(num_words=100)
@@ -139,8 +75,4 @@ if __name__ == '__main__':
     simple_model = build_many_to_one_language_model(num_words=100, embedding_size=300)
     simple_model.summary()
 
-    fast_model = build_fast_language_model(num_words=100, embedding_size=300, use_gpu=False)
-    fast_model.summary()
 
-    fast_evaluation = fast_language_model_evaluation(fast_model)
-    fast_evaluation.summary()
