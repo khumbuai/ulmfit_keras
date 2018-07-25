@@ -13,7 +13,7 @@ class BatchGenerator():
         self.tokenized_text = tokenized_text
         self.batch_size = batch_size
         self.modify_seq_len = modify_seq_len
-        assert model_description in ['normal', 'many_to_one', 'fast'], 'Model not supported'
+        assert model_description in ['normal', 'many_to_one'], 'Model not supported'
         self.model_description = model_description
 
     @staticmethod
@@ -131,3 +131,4 @@ if __name__ == '__main__':
     visualize_batches(many_to_one_batch_generator)
     print('Fast')
     visualize_batches(fast_batch_generator)
+
