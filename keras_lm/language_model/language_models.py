@@ -106,8 +106,8 @@ def build_fast_language_model(num_words, embedding_size=300, dropouti=0.2, rnn_s
         return Lambda(lambda x: K.sum(x[0] * x[1], axis=-1, keepdims=False))([vector1, vector2])
 
     similarity = scalar_product(rnn, emb_target)
-    # dissimilarity implements Skip-Gram negative sampling.
-    dissimilarity = scalar_product(emb_neg_sample, emb_target)
+    # dissimilarity implements Skip-Gram negative sampling. Assure that the different words have different word vectors.
+    dissimilarity = scalar_product(emb_inp, emb_neg_sample)
 
     model = Model(inputs=[inp, inp_target, inp_neg_sample], outputs=[similarity, dissimilarity])
     model.compile(loss='mse', optimizer=Adam(lr=3e-4, beta_1=0.8, beta_2=0.99))
