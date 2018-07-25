@@ -1,4 +1,8 @@
-# adatped from https://github.com/brunoklein99/srcnn/blob/5e874eb161d4d27cfdb6ac9b2196b3ad154fc672/LRMultiplierSGD.py#L46
+"""
+Implementation of Discriminative fine-tuning as explained in https://arxiv.org/pdf/1801.06146.pdf
+
+Adatped from https://github.com/brunoklein99/srcnn/blob/5e874eb161d4d27cfdb6ac9b2196b3ad154fc672/LRMultiplierSGD.py#L46
+"""
 
 import keras.backend as K
 from keras.legacy import interfaces
@@ -25,7 +29,7 @@ class LRMultiplierSGD(Optimizer):
         nesterov: boolean. Whether to apply Nesterov momentum.
     """
 
-    def __init__(self, lr=0.01, momentum=0., decay=0.,
+    def __init__(self, lr=0.01, momentum=0., decay=0., discrimative_decay=1 / 2.6,
                  nesterov=False, **kwargs):
         super(LRMultiplierSGD, self).__init__(**kwargs)
         with K.name_scope(self.__class__.__name__):
@@ -33,11 +37,61 @@ class LRMultiplierSGD(Optimizer):
             self.lr = K.variable(lr, name='lr')
             self.momentum = K.variable(momentum, name='momentum')
             self.decay = K.variable(decay, name='decay')
+            self.discrimative_decay = discrimative_decay
         self.initial_decay = decay
         self.nesterov = nesterov
 
+
+    def _set_up_discriminative_fine_tuning(self, params):
+        """
+        Sets up the decay for different layers in the network. The decay is calculated according to
+        decay[layer_(i + 1)] = decay[layer_i] * decay.
+        :param params:
+        :return:
+        """
+        # Example of param.name:
+        # lstm_1/kernel:0
+        # lstm_1/recurrent_kernel:0
+        # lstm_1/bias:0
+        # lstm_2/kernel:0
+        # lstm_2/recurrent_kernel:0
+        # lstm_2/bias:0
+        # dense_1/kernel:0
+        # dense_1/bias:0
+        names = [param.name.split('/')[0] for param in params]
+        print(names)
+        number_of_layers = len(set(names))
+
+        def list_to_depth(names):
+            """
+            ['lstm_1', 'lstm_1', 'lstm_1', 'lstm_2', 'lstm_2', 'lstm_2', 'dense_1', 'dense_1']
+            goes to
+            [1, 1, 1, 2, 2, 2, 3, 3]
+            :param names:
+            :return:
+            """
+            # TODO: refactor
+            layer_depths = [1]
+            layer_depth = 1
+            for i, name in enumerate(names[1:]):
+                if name != names[i]:
+                    layer_depth += 1
+                layer_depths.append(layer_depth)
+            return layer_depths
+
+        layer_depths = list_to_depth(names)
+
+        layer_decay = [K.variable(self.discrimative_decay ** (number_of_layers - depth)) for depth in layer_depths]
+        return layer_decay
+
     @interfaces.legacy_get_updates_support
     def get_updates(self, loss, params):
+        """
+
+        :param loss:
+        :param list[tf.Variable] params: list of tensorflow weights and biases
+        :return:
+        """
         grads = self.get_gradients(loss, params)
         self.updates = [K.update_add(self.iterations, 1)]
 
@@ -55,17 +109,11 @@ class LRMultiplierSGD(Optimizer):
 
         # The learning rate of the uppermost trainable layer is decreased by discriminative_fine_tuning
         # len(params) // 2 is (approximately) the number of layers on the model -> weight+ bias per each layer
-        discriminative_fine_tuning = K.variable((1/2.6) ** len(params) // 2)
-
-        print((1/2.6) ** len(params))
+        discriminative_fine_tuning = self._set_up_discriminative_fine_tuning(params)
 
         for i, (p, g, m) in enumerate(zip(params, grads, moments)):
 
-            v = self.momentum * m - (lr * discriminative_fine_tuning) * g  # velocity
-
-            # increase discriminative_fine_tuning for the next layer. params -> weight+ bias per each layer
-            if i % 2 == 0 and i >1:
-                discriminative_fine_tuning = discriminative_fine_tuning * K.variable(2.6)
+            v = self.momentum * m - (lr * discriminative_fine_tuning[i]) * g  # velocity
 
             self.updates.append(K.update(m, v))
 
@@ -91,19 +139,21 @@ class LRMultiplierSGD(Optimizer):
 
 if __name__ == '__main__':
     from keras.models import Sequential
-    from keras.layers import Dense
+    from keras.layers import Dense, LSTM
     import numpy as np
 
     model = Sequential()
-    model.add(Dense(12, input_dim=8, activation='relu'))
-    model.add(Dense(8, activation='relu'))
-    model.add(Dense(1, activation='sigmoid'))
+    model.add(LSTM(4, input_shape=(8, 1), return_sequences=True))
+    model.add(LSTM(4))
+
+    model.add(Dense(1))
+    model.compile(loss='mean_squared_error', optimizer='adam')
 
     opt = LRMultiplierSGD(lr=1e-4, momentum=0.9)
     model.compile(optimizer=opt, loss='mse')
     model.summary()
 
-    x = np.random.rand(1000, 8)
+    x = np.random.rand(1000, 8, 1)
     y = np.random.rand(1000, 1)
 
     model.fit(x, y, batch_size=64, epochs=2)
