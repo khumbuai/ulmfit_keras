@@ -22,7 +22,7 @@ class BatchGenerator():
         # Prevent excessively small or negative sequence lengths
         return max(5, int(np.random.normal(seq_len, 5)))
 
-    def _reshape_sample(self, X, Y):
+    def _reshape_batch_for_fast_language_model(self, X, Y):
         """
         Reshapes the (X, Y) batch such that it is valid input for the fast model architecture.
         :param array X: shape (batch_size, sequence_length)
@@ -39,7 +39,8 @@ class BatchGenerator():
         # see build_fast_language_model in language models for model architecture
         targets = [np.ones_like(X), np.zeros_like(X)]
 
-        # Implements Skip-gram negative sampling
+        # Implements Skip-gram negative sampling. Assumes that the corpus has enough words, such that
+        # sampling Y is not probable
         negative_samples = np.random.choice(self.tokenized_text, X.shape)
         return [X, Y, negative_samples], targets
 
@@ -86,7 +87,7 @@ class BatchGenerator():
         X = np.array(X)
         Y = np.array(Y)
         if self.model_description == 'fast':
-            X, Y = self._reshape_sample(X, Y)
+            X, Y = self._reshape_batch_for_fast_language_model(X, Y)
 
         return X, Y
 

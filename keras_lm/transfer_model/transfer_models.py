@@ -8,9 +8,9 @@ from keras.preprocessing.sequence import pad_sequences
 import pickle
 from collections import defaultdict
 
-from keras_lm.model.train_language_model import ModelTrainer
-from keras_lm.model.multilayer_optimizer import LRMultiplierSGD
-from keras_lm.model.language_models import build_fast_language_model
+from keras_lm.language_model.train_language_model import ModelTrainer
+from keras_lm.transfer_model.multilayer_optimizer import LRMultiplierSGD
+from keras_lm.language_model.language_models import build_fast_language_model
 
 
 def tokenize(df, word2idx, maxlen=50):
@@ -47,6 +47,7 @@ def finetune_language_model(language_model, model_description, corpus, learning_
     return language_model
 
 
+
 def language_classification_model(language_model, num_labels, lr=0.0001, lr_d=0.0, kernel_size1=3, kernel_size2=2,
                                   dense_units=128, dropout=0.1, filters=32):
     """
@@ -80,7 +81,7 @@ def language_classification_model(language_model, num_labels, lr=0.0001, lr_d=0.
     x = BatchNormalization()(x)
     x = Dropout(dropout)(Dense(int(dense_units / 2), activation='relu') (x))
     x = Dense(num_labels, activation = "sigmoid")(x)
-    model = Model(inputs = language_model.input, outputs = x)
+    model = Model(inputs=language_model.input, outputs=x)
     model.compile(loss="binary_crossentropy", optimizer=Adam(lr=lr, decay=lr_d), metrics=["accuracy"])
 
     return model
