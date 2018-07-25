@@ -38,7 +38,10 @@ class BatchGenerator():
         # target[1] -> dot product between current word embedding and next word embedding.
         # see build_fast_language_model in language models for model architecture
         targets = [np.ones_like(X), np.zeros_like(X)]
-        return [X, Y], targets
+
+        # Implements Skip-gram negative sampling
+        negative_samples = np.random.choice(self.tokenized_text, X.shape)
+        return [X, Y, negative_samples], targets
 
     def get_sample(self, pos, seq_len):
         """

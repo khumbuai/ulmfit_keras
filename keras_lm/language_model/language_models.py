@@ -8,6 +8,8 @@ from keras.optimizers import Adam
 import keras.backend as K
 from keras.constraints import unit_norm
 
+import numpy as np
+
 from keras_lm.language_model.tied_embeddings import TiedEmbeddingsTransposed
 from keras_lm.language_model.qrnn import QRNN
 
@@ -77,6 +79,7 @@ def build_fast_language_model(num_words, embedding_size=300, dropouti=0.2, rnn_s
     # create some input variables
     inp = Input(shape=(None,), name='input')
     inp_target = Input(shape=(None,), name='target')  # this is the shifted sequence
+    inp_neg_sample = Input(shape=(None,), name='negative_sample')
 
     emb = Embedding(num_words, embedding_size, name='embedding',  embeddings_constraint=unit_norm(axis=1))
 
@@ -84,6 +87,8 @@ def build_fast_language_model(num_words, embedding_size=300, dropouti=0.2, rnn_s
     emb_inp = Dropout(dropouti)(emb_inp)
 
     emb_target = emb(inp_target)
+
+    emb_neg_sample = emb(inp_neg_sample)
 
     if use_qrnn:
         rnn = QRNN(rnn_sizes[0], return_sequences=True, window_size=2)(emb_inp)
@@ -98,23 +103,13 @@ def build_fast_language_model(num_words, embedding_size=300, dropouti=0.2, rnn_s
         rnn = RnnUnit(embedding_size, return_sequences=True, name='final_rnn_layer')(rnn)
 
     def scalar_product(vector1, vector2):
-        #TODO: find a cleaner way to perform the timedistributed dot product
-        helper_tensor = Concatenate()([vector1, vector2])
-        reshaped = Reshape((-1, embedding_size, 2))(helper_tensor)
-
-        def tensor_product(x):
-            a = x[:, :, :, 0]
-            b = x[:, :, :, 1]
-            y = K.sum(a * b, axis=-1, keepdims=False)
-            return y
-        return Lambda(tensor_product)(reshaped)  # similarity is between -1 and 1
+        return Lambda(lambda x: K.sum(x[0] * x[1], axis=-1, keepdims=False))([vector1, vector2])
 
     similarity = scalar_product(rnn, emb_target)
     # dissimilarity implements Skip-Gram negative sampling.
-    # The current word embedding should be orthogonal to the word embedding of the following word.
-    dissimilarity = scalar_product(emb_inp, emb_target)
+    dissimilarity = scalar_product(emb_neg_sample, emb_target)
 
-    model = Model(inputs=[inp, inp_target], outputs=[similarity, dissimilarity])
+    model = Model(inputs=[inp, inp_target, inp_neg_sample], outputs=[similarity, dissimilarity])
     model.compile(loss='mse', optimizer=Adam(lr=3e-4, beta_1=0.8, beta_2=0.99))
     return model
 
