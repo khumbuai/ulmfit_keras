@@ -76,7 +76,7 @@ def pytorch_int2keras_int(pytorch_int):
     return word2idx[pytorch_idx2word[pytorch_int]]
 
 
-def create_mebedding_weights():
+def create_embedding_weights():
     embedding_weights =  wgts['0.encoder.weight'].numpy()
     num_words = embedding_weights.shape[0]
 
@@ -112,7 +112,7 @@ def create_rnn_weights(i):
 if __name__ == '__main__':
 
     # 1. Grap weights from Pytorch model
-    embedding_weights = create_mebedding_weights()
+    embedding_weights = create_embedding_weights()
 
     rnn_weights = [create_rnn_weights(i) for i in range(3)]
 
