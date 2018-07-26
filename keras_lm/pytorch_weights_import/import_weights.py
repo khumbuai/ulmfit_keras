@@ -86,15 +86,59 @@ def create_embedding_weights():
     return embedding_weights.reshape((1, -1, em_sz))
 
 
-def create_rnn_weights(i):
+def create_rnn_weights(i, use_gpu=True):
+    """
+    Fetches the weights form the pytorch LSTM layer and transforms it to weights which can be used
+    for tensorflow LSTM layers
+    :param int i: number of rnn layer
+    :return:
+    """
+
     """
     Trainable layers in the tensorflow LSTM layer: (example first_rnn_layer)
     [<tf.Variable 'lstm_1/kernel:0' shape=(400, 4600) dtype=float32_ref>,
      <tf.Variable 'lstm_1/recurrent_kernel:0' shape=(1150, 4600) dtype=float32_ref>,
     <tf.Variable 'lstm_1/bias:0' shape=(4600,) dtype=float32_ref>]
-    :param int i: number of rnn layer
-    :return:
+    
+    CuDNNLSTM implementation in keras
+    https://github.com/keras-team/keras/blob/master/keras/layers/cudnn_recurrent.py#L324
+
+    self.kernel_i = self.kernel[:, :self.units]
+    self.kernel_f = self.kernel[:, self.units: self.units * 2]
+    self.kernel_c = self.kernel[:, self.units * 2: self.units * 3]
+    self.kernel_o = self.kernel[:, self.units * 3:]
+
+    self.recurrent_kernel_i = self.recurrent_kernel[:, :self.units]
+    self.recurrent_kernel_f = self.recurrent_kernel[:, self.units: self.units * 2]
+    self.recurrent_kernel_c = self.recurrent_kernel[:, self.units * 2: self.units * 3]
+    self.recurrent_kernel_o = self.recurrent_kernel[:, self.units * 3:]
+
+    self.bias_i_i = self.bias[:self.units]
+    self.bias_f_i = self.bias[self.units: self.units * 2]
+    self.bias_c_i = self.bias[self.units * 2: self.units * 3]
+    self.bias_o_i = self.bias[self.units * 3: self.units * 4]
+
+    self.bias_i = self.bias[self.units * 4: self.units * 5]
+    self.bias_f = self.bias[self.units * 5: self.units * 6]
+    self.bias_c = self.bias[self.units * 6: self.units * 7]
+    self.bias_o = self.bias[self.units * 7:]
+
+    https://github.com/pytorch/pytorch/blob/master/torch/nn/modules/rnn.py
+    weight_ih_l0 - (W_ii, W_if, W_ig, W_io)
+    weight_hh_l0 - (W_hi, W_hf, W_hg, W_ho)
+    bias_ih_l0 - (b_ii, b_if, b_ig, b_io)
+    bias_hh_l0 - (b_hi, b_hf, b_hg, b_ho)
+
+    \begin{array}{ll}
+    i_t = \sigma(W_{ii} x_t + b_{ii} + W_{hi} h_{(t-1)} + b_{hi}) \ \
+    f_t = \sigma(W_{if} x_t + b_{if} + W_{hf} h_{(t-1)} + b_{hf}) \ \
+    g_t = \tanh(W_{ig} x_t + b_{ig} + W_{hg} h_{(t-1)} + b_{hg}) \ \
+    o_t = \sigma(W_{io} x_t + b_{io} + W_{ho} h_{(t-1)} + b_{ho}) \ \
+    c_t = f_t c_{(t-1)} + i_t g_t \ \
+    h_t = o_t \tanh(c_t)
+    \end{array}
     """
+
     prefix = '0.rnns.' + str(i) + '.module.'
 
     ih_weight = wgts[prefix + 'weight_ih_l0'].numpy().T  # shape (input_dim, 4 * rnn_size)
@@ -103,18 +147,22 @@ def create_rnn_weights(i):
     hh_weights= wgts[prefix + 'weight_hh_l0_raw'].numpy().T  # shape (rnn_size, 4 * rnn_size)
     hh_bias = wgts[prefix + 'bias_hh_l0'].numpy()  # (4 * rnn_size,)
 
-    # pytorch uses two biases, whereas tensorflow only has one shared bias layer
-    bias = 0.5 * (ih_bias + hh_bias)
+    #  tensorflow has one shared bias layer for cpu, but two for gpu (maybe due to parallel processing)
+    if not use_gpu:
+        bias = 0.5 * (ih_bias + hh_bias)
+    else:
+        bias = np.concatenate([ih_bias, hh_bias])
 
     return ih_weight, hh_weights, bias
 
 
 if __name__ == '__main__':
+    use_gpu = True
 
     # 1. Grap weights from Pytorch model
     embedding_weights = create_embedding_weights()
 
-    rnn_weights = [create_rnn_weights(i) for i in range(3)]
+    rnn_weights = [create_rnn_weights(i, use_gpu=use_gpu) for i in range(3)]
 
     # 2. Initialize keras model with pretrained weights
     language_model = build_language_model(num_words=embedding_weights.shape[1],
@@ -122,7 +170,7 @@ if __name__ == '__main__':
                                            rnn_sizes=(1150, 1150, 1150),
                                            tie_weights=True,
                                            use_qrnn=False,
-                                           use_gpu=False,
+                                           use_gpu=use_gpu,
                                            only_last=False)
     language_model.summary()
 
@@ -141,4 +189,3 @@ if __name__ == '__main__':
 
     # 4. Evaluate language model
     evaluate_model(language_model, word2idx, 'i feel sick and go to the next', num_predictions=20)
-
