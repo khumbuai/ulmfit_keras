@@ -1,5 +1,5 @@
 """
-Imports the pretrained weightsform pytorch to keras.
+Imports the pretrained weights from pytorch to keras.
 """
 from keras import backend as K
 
