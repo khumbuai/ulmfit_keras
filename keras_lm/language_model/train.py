@@ -1,9 +1,9 @@
-import os
-import pickle
-
 import keras.backend as K
-import numpy as np
 from keras.callbacks import EarlyStopping, ModelCheckpoint
+from keras.optimizers import Adam
+
+import pickle
+import numpy as np
 
 from keras_lm.language_model.model import build_language_model
 from keras_lm.preprocessing.batch_generators import BatchGenerator
@@ -34,11 +34,8 @@ def evaluate_model(model, word2idx, test_sentence, num_predictions=5):
     print(' '.join([idx2word[i] for i in encoded_sentence]))
 
 
-
-
 if __name__ == '__main__':
-    os.environ["CUDA_VISIBLE_DEVICES"]="1"
-    #check_fast_model_output()
+    epochs = 20
     batch_size = 64
     valid_batch_size = 16
     seq_length = 50
@@ -64,6 +61,5 @@ if __name__ == '__main__':
                              validation_steps=len(corpus.valid)//(seq_length * batch_size),
                              callbacks=callbacks,
                              )
-
 
     evaluate_model(model,corpus.word2idx,'i feel sick and go to the ')
