@@ -20,7 +20,7 @@ def build_language_model(num_words, embedding_size=300, rnn_sizes=(1024, 512),
 
     if use_qrnn:
         rnn = QRNN(rnn_sizes[0], return_sequences=True, window_size=2)(emb_inp)
-        for rnn_size in rnn_sizes[1:-1]:
+        for rnn_size in rnn_sizes[1:]:
             rnn = QRNN(rnn_size, return_sequences=True, window_size=1)(rnn)
         if only_last:
             rnn = QRNN(embedding_size, return_sequences=False, window_size=1, name='final_rnn_layer')(rnn)
@@ -29,7 +29,7 @@ def build_language_model(num_words, embedding_size=300, rnn_sizes=(1024, 512),
     else:
         RnnUnit = CuDNNLSTM if use_gpu else LSTM
         rnn = RnnUnit(rnn_sizes[0], return_sequences=True)(emb_inp)
-        for rnn_size in rnn_sizes[1:-1]:
+        for rnn_size in rnn_sizes[1:]:
             rnn = RnnUnit(rnn_size, return_sequences=True)(rnn)
         if only_last:
             rnn = RnnUnit(embedding_size, return_sequences=False, name='final_rnn_layer')(rnn)
