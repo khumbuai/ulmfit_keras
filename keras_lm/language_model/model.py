@@ -9,7 +9,7 @@ from keras_lm.language_model.custom_layers import TiedEmbeddingsTransposed
 from keras_lm.language_model.custom_layers import QRNN
 
 
-def build_language_model(num_words, embedding_size=300, rnn_sizes=(1024, 512),
+def build_language_model(num_words, embedding_size=400, rnn_sizes=(1024, 512),
                          dropout=0.1, dropouth=0.3, dropouti=0.2, dropoute=0.1, wdrop=0.5,
                          tie_weights=True, use_qrnn=False, use_gpu=True, only_last = False):
 
@@ -29,7 +29,7 @@ def build_language_model(num_words, embedding_size=300, rnn_sizes=(1024, 512),
     else:
         RnnUnit = CuDNNLSTM if use_gpu else LSTM
         rnn = RnnUnit(rnn_sizes[0], return_sequences=True)(emb_inp)
-        for rnn_size in rnn_sizes[1:]:
+        for rnn_size in rnn_sizes[1:-1]:
             rnn = RnnUnit(rnn_size, return_sequences=True)(rnn)
         if only_last:
             rnn = RnnUnit(embedding_size, return_sequences=False, name='final_rnn_layer')(rnn)
