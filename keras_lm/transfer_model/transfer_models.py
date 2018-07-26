@@ -8,9 +8,11 @@ from keras.preprocessing.sequence import pad_sequences
 import pickle
 from collections import defaultdict
 
-from keras_lm.language_model.train import ModelTrainer
+from keras.losses import sparse_categorical_crossentropy
+from keras.optimizers import Adam
+
 from keras_lm.transfer_model.multilayer_optimizer import LRMultiplierSGD
-from keras_lm.language_model.model import build_fast_language_model
+from keras_lm.language_model.model import build_language_model
 
 
 def tokenize(df, word2idx, maxlen=50):
@@ -20,8 +22,32 @@ def tokenize(df, word2idx, maxlen=50):
     return pad_sequences(df['Phrase'], maxlen=maxlen)
 
 
+def train_transfer_model(transfer_model, train_gen, steps_per_epoch, learning_rates):
+    """
+    Implementation of language model finetuning by unfreezing the layer step by step.
+    :param language_model:
+    :param model_description:
+    :param list learning_rates: list of learning rates.
+    :return:
+    """
+    K.clear_session()
 
+    for layer in transfer_model.layers:
+        layer.trainable = False
 
+    for i, layer in enumerate(reversed(transfer_model.layers)):
+        layer.trainable = True
+
+        transfer_model.compile(loss=sparse_categorical_crossentropy, optimizer=LRMultiplierSGD(lr=learning_rates[i],
+                                                                                               momentum=0., decay=0.,
+                                                                                               nesterov=False))
+
+        transfer_model.fit_generator(train_gen,
+                                     steps_per_epoch=steps_per_epoch,
+                                     epochs=1,
+                                     )
+
+    return transfer_model
 
 
 def language_classification_model(language_model, num_labels, lr=0.0001, lr_d=0.0, kernel_size1=3, kernel_size2=2,

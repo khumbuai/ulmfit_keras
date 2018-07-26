@@ -29,7 +29,7 @@ class LRMultiplierSGD(Optimizer):
         nesterov: boolean. Whether to apply Nesterov momentum.
     """
 
-    def __init__(self, lr=0.01, momentum=0., decay=0., discrimative_decay=1 / 2.6,
+    def __init__(self, lr=0.01, momentum=0., decay=0., discriminative_decay=1 / 2.6,
                  nesterov=False, **kwargs):
         super(LRMultiplierSGD, self).__init__(**kwargs)
         with K.name_scope(self.__class__.__name__):
@@ -37,7 +37,7 @@ class LRMultiplierSGD(Optimizer):
             self.lr = K.variable(lr, name='lr')
             self.momentum = K.variable(momentum, name='momentum')
             self.decay = K.variable(decay, name='decay')
-            self.discrimative_decay = discrimative_decay
+            self.discriminative_decay = discriminative_decay
         self.initial_decay = decay
         self.nesterov = nesterov
 
@@ -45,7 +45,8 @@ class LRMultiplierSGD(Optimizer):
     def _set_up_discriminative_fine_tuning(self, params):
         """
         Sets up the decay for different layers in the network. The decay is calculated according to
-        decay[layer_(i + 1)] = decay[layer_i] * decay.
+        decay[layer_(i + 1)] = decay[layer_i] * self.discriminative_decay. The layer last to the output is layer_0
+        and is set such that decay[layer_0] = 1.
         :param params:
         :return:
         """
@@ -59,7 +60,6 @@ class LRMultiplierSGD(Optimizer):
         # dense_1/kernel:0
         # dense_1/bias:0
         names = [param.name.split('/')[0] for param in params]
-        print(names)
         number_of_layers = len(set(names))
 
         def list_to_depth(names):
@@ -81,7 +81,7 @@ class LRMultiplierSGD(Optimizer):
 
         layer_depths = list_to_depth(names)
 
-        layer_decay = [K.variable(self.discrimative_decay ** (number_of_layers - depth)) for depth in layer_depths]
+        layer_decay = [K.variable(self.discriminative_decay ** (number_of_layers - depth)) for depth in layer_depths]
         return layer_decay
 
     @interfaces.legacy_get_updates_support

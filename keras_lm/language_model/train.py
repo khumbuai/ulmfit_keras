@@ -4,6 +4,8 @@ import pickle
 import keras.backend as K
 import numpy as np
 from keras.callbacks import EarlyStopping, ModelCheckpoint
+from keras.losses import sparse_categorical_crossentropy
+from keras.optimizers import Adam
 
 from keras_lm.language_model.model import build_language_model
 from keras_lm.preprocessing.batch_generators import BatchGenerator
@@ -51,7 +53,7 @@ if __name__ == '__main__':
     K.clear_session()
     num_words = len(corpus.word2idx) +1
     model = build_language_model(num_words, embedding_size=300, use_gpu=False)
-    model.compile(loss='mse', optimizer=Adam(lr=3e-4, beta_1=0.8, beta_2=0.99))
+    model.compile(loss=sparse_categorical_crossentropy, optimizer=Adam(lr=3e-4, beta_1=0.8, beta_2=0.99))
 
     model.summary()
 
@@ -59,7 +61,7 @@ if __name__ == '__main__':
                  ModelCheckpoint('assets/language_model.hdf5', save_weights_only=True)]
     history = model.fit_generator(train_gen,
                              steps_per_epoch=len(corpus.train)//(seq_length * batch_size),
-                             epochs=epochs,
+                             epochs=20,
                              validation_data=valid_gen,
                              validation_steps=len(corpus.valid)//(seq_length * batch_size),
                              callbacks=callbacks,

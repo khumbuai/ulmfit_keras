@@ -22,28 +22,6 @@ class BatchGenerator():
         # Prevent excessively small or negative sequence lengths
         return max(5, int(np.random.normal(seq_len, 5)))
 
-    def _reshape_batch_for_fast_language_model(self, X, Y):
-        """
-        Reshapes the (X, Y) batch such that it is valid input for the fast model architecture.
-        :param array X: shape (batch_size, sequence_length)
-        :param array Y: shape (batch_size, sequence_length, 1)
-        :return:
-        :rtype array:
-        """
-        Y = np.squeeze(Y)
-        # !!!! Be carful not to convert the return value of [X, Y] to a numpy array, as it will then throw an error in the fit method!
-        # https://stackoverflow.com/questions/46450184/keras-multiple-inputs-for-fit-generator-using-flow-from-directory
-
-        # targets[0] -> dot product between rnn output and next word embedding.
-        # target[1] -> dot product between current word embedding and next word embedding.
-        # see build_fast_language_model in language models for model architecture
-        targets = [np.ones_like(X), np.zeros_like(X)]
-
-        # Implements Skip-gram negative sampling. Assumes that the corpus has enough words, such that
-        # sampling Y is not probable
-        negative_samples = np.random.choice(self.tokenized_text, X.shape)
-        return [X, Y, negative_samples], targets
-
     def get_sample(self, pos, seq_len):
         """
         Returns one x, y pair
@@ -84,12 +62,7 @@ class BatchGenerator():
             Y.append(y)
             pos = (pos + seq_len) % len(self.tokenized_text)
 
-        X = np.array(X)
-        Y = np.array(Y)
-        if self.model_description == 'fast':
-            X, Y = self._reshape_batch_for_fast_language_model(X, Y)
-
-        return X, Y
+        return np.array(X), np.array(Y)
 
     def batch_gen(self, seq_len):
         """
