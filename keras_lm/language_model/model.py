@@ -1,8 +1,5 @@
 import os
-
-os.environ["CUDA_VISIBLE_DEVICES"]="1"
-from keras.layers import Input, CuDNNLSTM, Embedding, Dense, Reshape, LSTM, TimeDistributed, Dropout, Lambda, \
-    Concatenate
+from keras.layers import Input, CuDNNLSTM, Embedding, Dense, LSTM, TimeDistributed, Dropout
 from keras.models import Model
 
 from keras_lm.language_model.custom_layers import TiedEmbeddingsTransposed
@@ -49,10 +46,6 @@ def build_language_model(num_words, embedding_size=300, rnn_sizes=(1024, 512),
     out = Dropout(dropout)(logits)
     model = Model(inputs=inp, outputs=out)
     return model
-
-
-
-
 
 
 if __name__ == '__main__':

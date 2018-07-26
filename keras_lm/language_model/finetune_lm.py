@@ -9,8 +9,6 @@ from keras_lm.language_model.train import evaluate_model
 
 import pickle
 import numpy as np
-import pandas as pd
-import os
 from collections import defaultdict
 
 UNKNOWN_TOKEN = '<unk>'
@@ -48,7 +46,7 @@ if __name__ == '__main__':
 
     language_model = build_language_model(num_words, embedding_size=300, use_gpu=False)
     language_model.summary()
-    #language_model.load_weights(WEIGTHS_FILEPATH)
+    language_model.load_weights(WEIGTHS_FILEPATH)
 
     # 2. Prepare target training dataset.
     with open(FINETUNED_CORPUS_FILEPATH, 'rb') as f:
