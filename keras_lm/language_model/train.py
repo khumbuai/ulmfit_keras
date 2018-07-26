@@ -51,7 +51,7 @@ if __name__ == '__main__':
     K.clear_session()
     num_words = len(corpus.word2idx) +1
     model = build_language_model(num_words, embedding_size=300, use_gpu=False)
-    model.compile(loss='mse', optimizer=Adam(lr=3e-4, beta_1=0.8, beta_2=0.99))
+    model.compile(loss='sparse_categorical_crossentropy', optimizer=Adam(lr=3e-4, beta_1=0.8, beta_2=0.99))
 
     model.summary()
 
