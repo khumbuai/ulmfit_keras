@@ -59,7 +59,7 @@ if __name__ == '__main__':
                  ModelCheckpoint('assets/language_model.hdf5', save_weights_only=True)]
     history = model.fit_generator(train_gen,
                              steps_per_epoch=len(corpus.train)//(seq_length * batch_size),
-                             epochs=epochs,
+                             epochs=20,
                              validation_data=valid_gen,
                              validation_steps=len(corpus.valid)//(seq_length * batch_size),
                              callbacks=callbacks,
