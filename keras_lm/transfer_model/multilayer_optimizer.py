@@ -118,7 +118,7 @@ class LRMultiplierSGD(Optimizer):
             self.updates.append(K.update(m, v))
 
             if self.nesterov:
-                new_p = p + self.momentum * v - lr * g
+                new_p = p + self.momentum * v - (lr * discriminative_fine_tuning[i]) * g
             else:
                 new_p = p + v
 
