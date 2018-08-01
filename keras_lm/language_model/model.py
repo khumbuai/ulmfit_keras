@@ -11,11 +11,8 @@ from keras_lm.language_model.custom_layers import TiedEmbeddingsTransposed
 from keras_lm.language_model.custom_layers import QRNN
 
 
-<<<<<<< HEAD
-def build_language_model(num_words, embedding_size=400, rnn_sizes=(1024, 512),
-=======
+
 def build_language_model(num_words, embedding_size=400, rnn_sizes=(1150, 1150),
->>>>>>> origin/develop
                          dropout=0.1, dropouth=0.3, dropouti=0.2, dropoute=0.1, wdrop=0.5,
                          tie_weights=True, use_qrnn=False, use_gpu=True, only_last=False):
 
