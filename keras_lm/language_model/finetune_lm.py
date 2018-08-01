@@ -13,10 +13,7 @@ from keras_lm.language_model.train import evaluate_model
 
 import pickle
 import numpy as np
-from copy import deepcopy
 import os
-
-UNKNOWN_TOKEN = '<unk>'
 
 
 def read_df(df):

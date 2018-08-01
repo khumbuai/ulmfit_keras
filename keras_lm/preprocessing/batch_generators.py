@@ -98,8 +98,8 @@ if __name__ == '__main__':
                 print(Y.shape)
                 print('~~~~~~~~~~~')
 
-    normal_batch_generator = iter(BatchGenerator(corpus.train, batch_size=10, model_description='normal', seq_len=50, modify_seq_len=False))
-    many_to_one_batch_generator = iter(BatchGenerator(corpus.train, batch_size=10, model_description='many_to_one', seq_len=50, modify_seq_len=False))
+    normal_batch_generator = BatchGenerator(corpus.train, batch_size=10, model_description='normal', seq_len=50, modify_seq_len=False)
+    many_to_one_batch_generator = BatchGenerator(corpus.train, batch_size=10, model_description='many_to_one', seq_len=50, modify_seq_len=False)
 
     print('Normal')
     visualize_batches(normal_batch_generator)

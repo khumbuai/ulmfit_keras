@@ -42,8 +42,8 @@ if __name__ == '__main__':
 
     corpus = pickle.load(open('assets/wikitext-103/wikitext-103.corpus','rb'))
 
-    train_gen = iter(BatchGenerator(corpus.train, batch_size, 'normal', seq_len, modify_seq_len=True))
-    valid_gen = iter(BatchGenerator(corpus.valid, valid_batch_size, 'normal', seq_len, modify_seq_len=True))
+    train_gen = BatchGenerator(corpus.train, batch_size, 'normal', seq_len, modify_seq_len=True)
+    valid_gen = BatchGenerator(corpus.valid, valid_batch_size, 'normal', seq_len, modify_seq_len=True)
 
     K.clear_session()
     num_words = len(corpus.word2idx) +1
