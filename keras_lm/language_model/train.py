@@ -1,9 +1,9 @@
-import os
-import pickle
-
 import keras.backend as K
-import numpy as np
 from keras.callbacks import EarlyStopping, ModelCheckpoint
+from keras.optimizers import Adam
+
+import pickle
+import numpy as np
 
 from keras_lm.language_model.model import build_language_model
 from keras_lm.preprocessing.batch_generators import BatchGenerator
@@ -34,36 +34,34 @@ def evaluate_model(model, word2idx, test_sentence, num_predictions=5):
     print(' '.join([idx2word[i] for i in encoded_sentence]))
 
 
-
-
 if __name__ == '__main__':
-    os.environ["CUDA_VISIBLE_DEVICES"]="1"
-    #check_fast_model_output()
+    epochs = 20
     batch_size = 64
     valid_batch_size = 16
-    seq_length = 50
+    seq_len = 50
 
     corpus = pickle.load(open('assets/wikitext-103/wikitext-103.corpus','rb'))
 
-    train_gen = BatchGenerator(corpus.train, batch_size, 'normal', modify_seq_len=True).batch_gen(seq_length)
-    valid_gen = BatchGenerator(corpus.valid, valid_batch_size, 'normal', modify_seq_len=True).batch_gen(seq_length)
+    train_gen = iter(BatchGenerator(corpus.train, batch_size, 'normal', seq_len, modify_seq_len=True))
+    valid_gen = iter(BatchGenerator(corpus.valid, valid_batch_size, 'normal', seq_len, modify_seq_len=True))
 
     K.clear_session()
     num_words = len(corpus.word2idx) +1
+
     model = build_language_model(num_words, embedding_size=300, use_gpu=False)
-    model.compile(loss='mse', optimizer=Adam(lr=3e-4, beta_1=0.8, beta_2=0.99))
+    model.compile(loss='sparse_categorical_crossentropy', optimizer=Adam(lr=3e-4, beta_1=0.8, beta_2=0.99))
 
     model.summary()
 
     callbacks = [EarlyStopping(patience=5),
                  ModelCheckpoint('assets/language_model.hdf5', save_weights_only=True)]
     history = model.fit_generator(train_gen,
-                             steps_per_epoch=len(corpus.train)//(seq_length * batch_size),
-                             epochs=epochs,
-                             validation_data=valid_gen,
-                             validation_steps=len(corpus.valid)//(seq_length * batch_size),
-                             callbacks=callbacks,
-                             )
+                                  steps_per_epoch=len(corpus.train) // (seq_len * batch_size),
+                                  epochs=epochs,
+                                  steps_per_epoch=len(corpus.train) // (seq_length * batch_size),
+                                  validation_data=valid_gen,
+                                  validation_steps=len(corpus.valid) // (seq_len * batch_size),
+                                  callbacks=callbacks,
+                                 )
 
-
-    evaluate_model(model,corpus.word2idx,'i feel sick and go to the ')
+    evaluate_model(model, corpus.word2idx, 'i feel sick and go to the ')
