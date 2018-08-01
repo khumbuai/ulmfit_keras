@@ -122,8 +122,8 @@ if __name__ == '__main__':
 
     # 4. Finetune model
 
-    train_gen = BatchGenerator(train, batch_size=batch_size, model_description='normal', modify_seq_len=True).batch_gen(seq_length)
-    valid_gen = BatchGenerator(valid, batch_size=batch_size, model_description='normal', modify_seq_len=True).batch_gen(seq_length)
+    train_gen = iter(BatchGenerator(train, batch_size, 'normal', seq_length, modify_seq_len=True))
+    valid_gen = iter(BatchGenerator(valid, batch_size, 'normal', seq_length, modify_seq_len=True))
 
     callbacks = [EarlyStopping(patience=5),
                  ModelCheckpoint(FINETUNED_WEIGTHS_FILEPATH, save_weights_only=True)]
