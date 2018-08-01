@@ -68,6 +68,8 @@ class BatchGenerator:
 
         return np.array(X), np.array(Y)
 
+    def __iter__(self):
+        return self
 
     def __next__(self):
         """

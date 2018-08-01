@@ -60,11 +60,9 @@ def update_language_model(language_model, num_words_not_in_corpus, **kwargs):
     old_embedding_weights = language_model.get_layer('embedding').get_weights()  # shape (len(language_corpus.word2idx), embedding_size)
     new_embedding_weights = update_embedding_weights(old_embedding_weights, num_words_not_in_corpus)
 
-    # TODO infer the model parameters (rnn_sizes) from the old language_model
     weights[0] = new_embedding_weights
 
     updated_language_model = build_language_model(num_words=new_embedding_weights.shape[0],
-                                                  embedding_size=new_embedding_weights.shape[1],
                                                   **kwargs)
 
     updated_language_model.set_weights(weights)
@@ -74,18 +72,18 @@ def update_language_model(language_model, num_words_not_in_corpus, **kwargs):
 
 if __name__ == '__main__':
     import pandas as pd
+    from collections import Counter, defaultdict
 
-    CORPUS_FILEPATH = 'assets/wikitext-103'
-    WIKITEXT_CORPUS_FILE = os.path.join(CORPUS_FILEPATH, 'wikitext-103.corpus')
-    Word2IDX_FILE = os.path.join(CORPUS_FILEPATH, 'fintuned_word2idx.p')
+    PYTORCH_ITOS_FILEPATH = os.path.join('assets/wikitext-103/itos_wt103.pkl')
 
     FINETUNED_CORPUS_FILEPATH = 'assets/finetuned_corpus/'
 
-    WEIGTHS_FILEPATH = 'weights/language_model.hdf5'
-    FINETUNED_WEIGTHS_FILEPATH = 'weights/language_model_finetuned.hdf5'
+    WEIGTHS_FILEPATH = 'assets/weights/language_model.hdf5'
+    FINETUNED_WEIGTHS_FILEPATH = 'assets/weights/language_model_finetuned.hdf5'
+    FINETUNED_WORD2IDX_FILEPATH = 'assets/finetuned_corpus/word2idx.p'
 
-    LANGUAGE_MODEL_PARAMS = {'embedding_size': 400, 'rnn_size': (1150, 1150), 'use_gpu':True,
-                             'dropout':0.1, 'tie_weights':True, 'use_qrnn':False, 'only_last': False
+    LANGUAGE_MODEL_PARAMS = {'embedding_size': 400, 'rnn_sizes': (1150, 1150), 'use_gpu': False,
+                             'dropout': 0.1, 'tie_weights': True, 'use_qrnn':False, 'only_last': False
                             }
 
     batch_size = 64
@@ -93,35 +91,41 @@ if __name__ == '__main__':
 
     # 1. Initialize pretrained language model.
     K.clear_session()
-    wikitext_corpus = pickle.load(open(WIKITEXT_CORPUS_FILE, 'rb'))
-    word2idx = wikitext_corpus.word2idx
+    with open(PYTORCH_ITOS_FILEPATH, 'rb') as f:
+        words = pickle.load(f)
 
-    num_words = len(wikitext_corpus.word2idx) +1
+    word2idx = {word: idx for idx, word in enumerate(words)}
+
+    word2idx = defaultdict(lambda: word2idx['_unk_'], word2idx)
+
+    num_words = len(word2idx)
 
     language_model = build_language_model(num_words, **LANGUAGE_MODEL_PARAMS)
     language_model.summary()
-    #language_model.load_weights(WEIGTHS_FILEPATH)
+    language_model.load_weights(WEIGTHS_FILEPATH)
 
     # 2. Open target training dataset. We assume that the dataframes contains the already tokenized sentences.
-    train_df = pd.read_csv(os.path.join(FINETUNED_CORPUS_FILEPATH, 'train.csv'))
-    valid_df = pd.read_csv(os.path.join(FINETUNED_CORPUS_FILEPATH, 'train.csv'))
+    train_df = pd.read_csv(os.path.join(FINETUNED_CORPUS_FILEPATH, 'train.csv'), names=['mood', 'text'])
+    valid_df = pd.read_csv(os.path.join(FINETUNED_CORPUS_FILEPATH, 'train.csv'), names=['mood', 'text'])
 
     train_text = read_df(train_df)
     valid_text = read_df(valid_df)
 
     text = train_text + valid_text
 
+    unique_words = [o for o, c in Counter(text).most_common(100000) if c > 10]
+
     # 3. Add new words to the word2idx dictionary and update the language model.
-    num_words_not_in_corpus = len(set(text) - set(wikitext_corpus.word2idx.keys()))
-    word2idx = update_word2idx(text, word2idx)
+    num_words_not_in_corpus = len(set(unique_words) - set(word2idx.keys()))
+    word2idx = update_word2idx(unique_words, word2idx)
     language_model = update_language_model(language_model, num_words_not_in_corpus, **LANGUAGE_MODEL_PARAMS)
 
+    language_model.summary()
     # 3. Prepare training and validation data
     train = [word2idx[word] for word in train_text]
     valid = [word2idx[word] for word in valid_text]
 
     # 4. Finetune model
-
     train_gen = iter(BatchGenerator(train, batch_size, 'normal', seq_length, modify_seq_len=True))
     valid_gen = iter(BatchGenerator(valid, batch_size, 'normal', seq_length, modify_seq_len=True))
 
@@ -141,8 +145,8 @@ if __name__ == '__main__':
                                  callbacks=callbacks,
                                  )
 
-    evaluate_model(language_model, wikitext_corpus.word2idx, 'i feel sick and go to the', num_predictions=5)
+    evaluate_model(language_model, word2idx, 'i feel sick and go to the', num_predictions=5)
 
     # 5. Save word2idx dictionary
-    with open(Word2IDX_FILE, 'wb') as f:
-        pickle.dump(wikitext_corpus.word2idx, f)
+    with open(FINETUNED_WORD2IDX_FILEPATH, 'wb') as f:
+        pickle.dump(word2idx, f)
