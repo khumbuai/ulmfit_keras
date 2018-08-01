@@ -56,11 +56,12 @@ if __name__ == '__main__':
     callbacks = [EarlyStopping(patience=5),
                  ModelCheckpoint('assets/language_model.hdf5', save_weights_only=True)]
     history = model.fit_generator(train_gen,
-                             steps_per_epoch=len(corpus.train)//(seq_len * batch_size),
-                             epochs=epochs,
-                             validation_data=valid_gen,
-                             validation_steps=len(corpus.valid)//(seq_len * batch_size),
-                             callbacks=callbacks,
-                             )
+                                  steps_per_epoch=len(corpus.train) // (seq_len * batch_size),
+                                  epochs=epochs,
+                                  steps_per_epoch=len(corpus.train) // (seq_length * batch_size),
+                                  validation_data=valid_gen,
+                                  validation_steps=len(corpus.valid) // (seq_len * batch_size),
+                                  callbacks=callbacks,
+                                 )
 
     evaluate_model(model, corpus.word2idx, 'i feel sick and go to the ')
