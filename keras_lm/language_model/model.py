@@ -1,9 +1,6 @@
 import os
-<<<<<<< HEAD
-=======
 
 os.environ["CUDA_VISIBLE_DEVICES"]="1"
->>>>>>> origin/develop
 from keras.layers import Input, CuDNNLSTM, Embedding, Dense, LSTM, TimeDistributed, Dropout
 from keras.models import Model
 
