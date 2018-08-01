@@ -14,76 +14,56 @@ from keras_lm.language_model.train import evaluate_model
 # The pretrained weights and the itos_wt103.pkl file can be found on http://files.fast.ai/models/wt103/
 PYTORCH_WEIGTHS_FILEPATH = 'assets/weights/fwd_wt103.h5'
 PYTORCH_IDX2WORD_FILEPATH = 'assets/wikitext-103/itos_wt103.pkl'
-UNKNOWN_TOKEN = '<unk>'
-
-# Pytorch model_parameters
-em_sz,nh,nl = 400, 1150, 3
 
 # Load the weights of the pretrained pytorch model
 wgts = torch.load(PYTORCH_WEIGTHS_FILEPATH, map_location=lambda storage, loc: storage)
 
-# for key, value in wgts.items():
-#     print(key)
-#     print(value.numpy().shape)
-    # 0.encoder.weight
-    # (238462, 400)
+"""
+for key, value in wgts.items():
+    print(key)
+    print(value.numpy().shape)
+    
+0.encoder.weight
+(238462, 400)
 
-    # 0.encoder_with_dropout.embed.weight
-    # (238462, 400)
+0.encoder_with_dropout.embed.weight
+(238462, 400)
 
-    # 0.rnns.0.module.weight_ih_l0
-    # (4600, 400)
-    # 0.rnns.0.module.bias_ih_l0
-    # (4600,)
-    # 0.rnns.0.module.bias_hh_l0
-    # (4600,)
-    # 0.rnns.0.module.weight_hh_l0_raw
-    # (4600, 1150)
+0.rnns.0.module.weight_ih_l0
+(4600, 400)
+0.rnns.0.module.bias_ih_l0
+(4600,)
+0.rnns.0.module.bias_hh_l0
+(4600,)
+0.rnns.0.module.weight_hh_l0_raw
+(4600, 1150)
 
-    # 0.rnns.1.module.weight_ih_l0
-    # (4600, 1150)
-    # 0.rnns.1.module.bias_ih_l0
-    # (4600,)
-    # 0.rnns.1.module.bias_hh_l0
-    # (4600,)
-    # 0.rnns.1.module.weight_hh_l0_raw
-    # (4600, 1150)
+0.rnns.1.module.weight_ih_l0
+(4600, 1150)
+0.rnns.1.module.bias_ih_l0
+(4600,)
+0.rnns.1.module.bias_hh_l0
+(4600,)
+0.rnns.1.module.weight_hh_l0_raw
+(4600, 1150)
 
-    # 0.rnns.2.module.weight_ih_l0
-    # (1600, 1150)
-    # 0.rnns.2.module.bias_ih_l0
-    # (1600,)
-    # 0.rnns.2.module.bias_hh_l0
-    # (1600,)
-    # 0.rnns.2.module.weight_hh_l0_raw
-    # (1600, 400)
+0.rnns.2.module.weight_ih_l0
+(1600, 1150)
+0.rnns.2.module.bias_ih_l0
+(1600,)
+0.rnns.2.module.bias_hh_l0
+(1600,)
+0.rnns.2.module.weight_hh_l0_raw
+(1600, 400)
 
-    # 1.decoder.weight
-    # (238462, 400)
-
-
-pytorch_idx2word = itos = pickle.load(open(PYTORCH_IDX2WORD_FILEPATH, 'rb'))
-
-corpus = pickle.load(open('assets/wikitext-103/wikitext-103.corpus','rb'))
-word2idx = defaultdict(lambda: word2idx[UNKNOWN_TOKEN], corpus.word2idx)
-
-def pytorch_int2keras_int(pytorch_int):
-    """
-    Maps itos (from pytorch saved model) to word2idx (as used in Keras implementation).
-    :param pytorch_int:
-    :return:
-    """
-    return word2idx[pytorch_idx2word[pytorch_int]]
-
+1.decoder.weight
+(238462, 400)
+"""
 
 def create_embedding_weights():
-    embedding_weights =  wgts['0.encoder.weight'].numpy()
-    num_words = embedding_weights.shape[0]
+    embedding_weights = wgts['0.encoder.weight'].numpy()
 
-    changed_numbering = [pytorch_int2keras_int(i) for i in range(num_words)]
-    embedding_weights = embedding_weights[changed_numbering]
-
-    return embedding_weights.reshape((1, -1, em_sz))
+    return embedding_weights.reshape((1, -1, 400))
 
 
 def create_rnn_weights(i, use_gpu=True):
@@ -95,6 +75,9 @@ def create_rnn_weights(i, use_gpu=True):
     """
 
     """
+    We need to ensure that the weight matrices map correctly from pytorch to keras.
+    Both implementations use the same ordering in the CuDNNLSTM implementation.
+    
     Trainable layers in the tensorflow LSTM layer: (example first_rnn_layer)
     [<tf.Variable 'lstm_1/kernel:0' shape=(400, 4600) dtype=float32_ref>,
      <tf.Variable 'lstm_1/recurrent_kernel:0' shape=(1150, 4600) dtype=float32_ref>,
@@ -122,21 +105,13 @@ def create_rnn_weights(i, use_gpu=True):
     self.bias_f = self.bias[self.units * 5: self.units * 6]
     self.bias_c = self.bias[self.units * 6: self.units * 7]
     self.bias_o = self.bias[self.units * 7:]
-
+    
+    CuDNNLSTM implementation in torch
     https://github.com/pytorch/pytorch/blob/master/torch/nn/modules/rnn.py
     weight_ih_l0 - (W_ii, W_if, W_ig, W_io)
     weight_hh_l0 - (W_hi, W_hf, W_hg, W_ho)
     bias_ih_l0 - (b_ii, b_if, b_ig, b_io)
     bias_hh_l0 - (b_hi, b_hf, b_hg, b_ho)
-
-    \begin{array}{ll}
-    i_t = \sigma(W_{ii} x_t + b_{ii} + W_{hi} h_{(t-1)} + b_{hi}) \ \
-    f_t = \sigma(W_{if} x_t + b_{if} + W_{hf} h_{(t-1)} + b_{hf}) \ \
-    g_t = \tanh(W_{ig} x_t + b_{ig} + W_{hg} h_{(t-1)} + b_{hg}) \ \
-    o_t = \sigma(W_{io} x_t + b_{io} + W_{ho} h_{(t-1)} + b_{ho}) \ \
-    c_t = f_t c_{(t-1)} + i_t g_t \ \
-    h_t = o_t \tanh(c_t)
-    \end{array}
     """
 
     prefix = '0.rnns.' + str(i) + '.module.'
@@ -157,21 +132,18 @@ def create_rnn_weights(i, use_gpu=True):
 
 
 if __name__ == '__main__':
-    use_gpu = True
+    LANGUAGE_MODEL_PARAMS = {'embedding_size': 400, 'rnn_sizes': (1150, 1150), 'use_gpu': False,
+                             'dropout': 0.1, 'tie_weights': True, 'use_qrnn': False, 'only_last': False
+                             }
 
     # 1. Grap weights from Pytorch model
     embedding_weights = create_embedding_weights()
 
-    rnn_weights = [create_rnn_weights(i, use_gpu=use_gpu) for i in range(3)]
+    rnn_weights = [create_rnn_weights(i, use_gpu=LANGUAGE_MODEL_PARAMS['use_gpu']) for i in range(3)]
 
     # 2. Initialize keras model with pretrained weights
     language_model = build_language_model(num_words=embedding_weights.shape[1],
-                                           embedding_size=em_sz,
-                                           rnn_sizes=(1150, 1150, 1150),
-                                           tie_weights=True,
-                                           use_qrnn=False,
-                                           use_gpu=use_gpu,
-                                           only_last=False)
+                                          **LANGUAGE_MODEL_PARAMS)
     language_model.summary()
 
     embedding_layer = language_model.get_layer('embedding')
@@ -188,4 +160,9 @@ if __name__ == '__main__':
     language_model.save('assets/language_model.hdf5', overwrite=True)
 
     # 4. Evaluate language model
+    with open(PYTORCH_IDX2WORD_FILEPATH, 'rb') as f:
+        idx2word = pickle.load(f)
+
+    word2idx = {word: idx for idx, word in enumerate(idx2word)}
+
     evaluate_model(language_model, word2idx, 'i feel sick and go to the next', num_predictions=20)
