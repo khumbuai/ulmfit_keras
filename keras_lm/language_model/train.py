@@ -49,12 +49,14 @@ if __name__ == '__main__':
     num_words = len(corpus.word2idx) +1
 
     model = build_language_model(num_words, embedding_size=300, use_gpu=False)
-    model.compile(loss='sparse_categorical_crossentropy', optimizer=Adam(lr=3e-4, beta_1=0.8, beta_2=0.99))
+    model.compile(loss='sparse_categorical_crossentropy', metrics=['sparse_categorical_accuracy'],
+                  optimizer=Adam(lr=3e-4, beta_1=0.8, beta_2=0.99))
 
     model.summary()
 
     callbacks = [EarlyStopping(patience=5),
                  ModelCheckpoint('assets/language_model.hdf5', save_weights_only=True)]
+
     history = model.fit_generator(train_gen,
                                   steps_per_epoch=len(corpus.train) // (seq_len * batch_size),
                                   epochs=epochs,
