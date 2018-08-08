@@ -88,7 +88,13 @@ class BatchGenerator:
 
 if __name__ == '__main__':
     import pickle
-    corpus = pickle.load(open('assets/wikitext-103/wikitext-103.corpus','rb'))
+    from keras_lm.utils.utils import LoadParameters
+
+    # 1. Load parameters from config.yaml file
+    params = LoadParameters()
+    wikipedia_corpus_file = params.params['wikipedia_corpus_file']
+
+    corpus = pickle.load(open(wikipedia_corpus_file, 'rb'))
 
     def visualize_batches(generator):
             for _ in range(4):

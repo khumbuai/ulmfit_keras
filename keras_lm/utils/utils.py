@@ -2,6 +2,33 @@ import numpy as np
 import csv
 import urllib3
 import os
+import pathlib
+import yaml
+from attrdict import AttrDict
+
+CONFIG_PATH = str(pathlib.Path(__file__).resolve().parents[1] / 'configs' / 'config.yaml')
+
+
+# Alex Martelli's 'Borg'
+# http://python-3-patterns-idioms-test.readthedocs.io/en/latest/Singleton.html
+class _Borg:
+    _shared_state = {}
+
+    def __init__(self):
+        self.__dict__ = self._shared_state
+
+
+class LoadParameters(_Borg):
+    def __init__(self, fallback_file=CONFIG_PATH):
+        _Borg.__init__(self)
+
+        self.fallback_file = fallback_file
+        self.params = self._read_yaml()
+
+    def _read_yaml(self):
+        with open(self.fallback_file) as f:
+            config = yaml.load(f)
+        return AttrDict(config)
 
 
 def maybe_download(filename, source_url, work_directory):
@@ -41,5 +68,9 @@ def write_file(file_path, text_path, num_tokens):
 
 
 if __name__=='__main__':
-    write_file('assets/val.csv','assets/wikitext-103/valid.txt',1000000)
-    write_file('assets/train.csv', 'assets/wikitext-103/train.txt', 1000000)
+
+    params = LoadParameters()
+    print(params.params)
+    print(type(params.params['lm_params']))
+    #write_file('assets/val.csv','assets/wikitext-103/valid.txt',1000000)
+    #write_file('assets/train.csv', 'assets/wikitext-103/train.txt', 1000000)

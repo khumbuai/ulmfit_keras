@@ -1,0 +1,22 @@
+project: USERNAME/PROJECT_NAME
+
+name: keras_wiki_lm
+
+# Data Paths
+wikipedia_corpus_file: /assets/wikitext-103/wikitext-103.corpus
+language_model_file: assets/language_model.hdf5
+
+pytorch_weights_filepath: /assets/weights/fwd_wt103.h5
+pytorch_idx2word_filepath: /assets/wikitext/itos_wt103.pkl
+
+
+# Language Model Params
+lm_params: {'embedding_size': 400, 'rnn_sizes': (1150, 1150), 'use_gpu': True,
+            'dropout': 0.1, 'tie_weights': True, 'use_qrnn': False, 'only_last': False
+            }
+
+# Language Model initial training params
+lm_epochs : 20
+lm_batch_size :  64
+lm_valid_batch_size: 16
+lm_seq_len: 50
