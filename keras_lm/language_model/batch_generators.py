@@ -39,7 +39,7 @@ class BatchGenerator:
             end = len(self.tokenized_text)
            
         data = self.tokenized_text[start -1: end - 1]
-        target = self.tokenized_text[end - 1] if self.only_last in ['normal', 'fast'] else self.tokenized_text[start:end]
+        target = self.tokenized_text[end - 1] if self.only_last else self.tokenized_text[start:end]
         # need to expand the dimension, such that Y has shape (batch_size, seq_len, 1) (for normal model),
         # or (batch_size, 1) (for many_to_one model)
         # -> needed for sparse_categorical_crossentropy loss
