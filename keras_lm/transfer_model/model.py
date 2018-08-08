@@ -2,7 +2,7 @@ from keras.layers import Lambda, GlobalAveragePooling1D, GlobalMaxPooling1D, con
 from keras.models import Model
 
 
-def build_classification_model(language_model, num_labels, dense_units=128, dropout=0.1):
+def build_classification_model(language_model, num_labels, dense_units=(128, 128), dropouts=(0.1, 0.1)):
     """
     Transfer model for language classification. Implementation of the transfer model as explained in
     https://arxiv.org/abs/1801.06146.
@@ -24,15 +24,12 @@ def build_classification_model(language_model, num_labels, dense_units=128, drop
 
     x = concatenate([avg_pool, max_pool, last_rnn_output])
 
-    x = Dense(dense_units, activation='relu') (x)
-    x = Dropout(dropout)(x)
-    x = BatchNormalization()(x)
+    for num_units, dropout in zip(dense_units, dropouts):
+        x = Dense(num_units, activation='relu') (x)
+        x = Dropout(dropout)(x)
+        x = BatchNormalization()(x)
 
-    x = Dense(dense_units, activation='relu') (x)
-    x = Dropout(dropout)(x)
-    x = BatchNormalization()(x)
-
-    x = Dense(num_labels, activation = "sigmoid")(x)
+    x = Dense(num_labels, activation="sigmoid")(x)
 
     model = Model(inputs=language_model.input, outputs=x)
 
@@ -44,5 +41,6 @@ if __name__ == '__main__':
     language_model = build_language_model(num_words=100)
     language_model.summary()
 
-    classification_model = build_classification_model(language_model, num_labels=5, dense_units=128, dropout=0.1)
+    classification_model = build_classification_model(language_model, num_labels=5,
+                                                      dense_units=(128, 128), dropouts=(0.1, 0.1))
     classification_model.summary()

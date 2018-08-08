@@ -59,7 +59,8 @@ if __name__ == '__main__':
     #language_model.load_weights(FINETUNED_WEIGTHS_FILEPATH)
 
     # 2. Initialize classifiaction_model
-    classification_model = build_classification_model(language_model, NUMBER_OF_LABELS, dense_units=128, dropout=0.1)
+    classification_model = build_classification_model(language_model, NUMBER_OF_LABELS,
+                                                      dense_units=(128, 128), dropouts=(0.1, 0.1))
 
     # 3. Load X_train from pickle file
     with open(TRAINING_DATA_FILEPATH, 'rb') as f:

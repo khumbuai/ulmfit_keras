@@ -31,9 +31,6 @@ def update_word2idx(word_list, word2idx):
     '''
     Updates the word2idx dictionary with all words which are in the word_list, but do not appear
     in the word2idx.keys()
-    :param words:
-    :param word2idx:
-    :return:
     '''
     words_not_in_corpus = list(set(word_list) - set(word2idx.keys()))
     additional_word2idx = {words_not_in_corpus[i]: len(word2idx) + i
@@ -118,13 +115,14 @@ if __name__ == '__main__':
     language_model = update_language_model(language_model, num_words_not_in_corpus, **LANGUAGE_MODEL_PARAMS)
 
     language_model.summary()
-    # 3. Prepare training and validation data
+
+    # 4. Prepare training and validation data
     train = [word2idx[word] for word in train_text]
     valid = [word2idx[word] for word in valid_text]
 
-    # 4. Finetune model
-    train_gen = iter(BatchGenerator(train, batch_size, 'normal', seq_length, modify_seq_len=True))
-    valid_gen = iter(BatchGenerator(valid, batch_size, 'normal', seq_length, modify_seq_len=True))
+    # 5. Finetune model
+    train_gen = BatchGenerator(train, batch_size, 'normal', seq_length, modify_seq_len=True)
+    valid_gen = BatchGenerator(valid, batch_size, 'normal', seq_length, modify_seq_len=True)
 
     callbacks = [EarlyStopping(patience=5),
                  ModelCheckpoint(FINETUNED_WEIGTHS_FILEPATH, save_weights_only=True)]
@@ -135,15 +133,15 @@ if __name__ == '__main__':
                            )
 
     language_model.fit_generator(train_gen,
-                                 steps_per_epoch=len(train)//(seq_length * batch_size),
+                                 steps_per_epoch=len(train) // (seq_length * batch_size),
                                  epochs=20,
                                  validation_data=valid_gen,
-                                 validation_steps=len(valid)//(seq_length * batch_size),
+                                 validation_steps=len(valid) // (seq_length * batch_size),
                                  callbacks=callbacks,
                                  )
 
     evaluate_model(language_model, word2idx, 'i feel sick and go to the', num_predictions=5)
 
-    # 5. Save word2idx dictionary
+    # 6. Save word2idx dictionary
     with open(FINETUNED_WORD2IDX_FILEPATH, 'wb') as f:
         pickle.dump(word2idx, f)
