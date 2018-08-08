@@ -72,6 +72,6 @@ if __name__ == '__main__':
                                   validation_data=valid_gen,
                                   validation_steps=len(corpus.valid) // (seq_len * batch_size),
                                   callbacks=callbacks,
-                                 )
+                                  )
 
     evaluate_model(model, corpus.word2idx, 'i feel sick and go to the ')

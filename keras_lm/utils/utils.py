@@ -5,6 +5,10 @@ import os
 import pathlib
 import yaml
 from attrdict import AttrDict
+import pandas as pd
+
+from fastai.text import Tokenizer
+from fastai.text import partition_by_cores
 
 CONFIG_PATH = str(pathlib.Path(__file__).resolve().parents[1] / 'configs' / 'config.yaml')
 
@@ -29,6 +33,54 @@ class LoadParameters(_Borg):
         with open(self.fallback_file) as f:
             config = yaml.load(f)
         return AttrDict(config)
+
+
+
+def preprocess_imdb_sentiments(root_directory):
+    """
+    Transforms the IMDB sentiment dataset into a dataframe.
+
+    IMBD dataset can be found on http://ai.stanford.edu/~amaas/data/sentiment/
+    :param root_directory: Root directory containing the train and test folders
+    :return:
+    """
+
+    classes = ['neg', 'pos']
+
+    def get_texts(path):
+        texts,labels = [],[]
+        for idx, label in enumerate(classes):
+            for fname in os.listdir(os.path.join(path, label)):
+                if fname.endswith('.txt'):
+                    with open(os.path.join(os.path.join(path, label), fname), 'r') as text:
+                        texts.append(text.read())
+                        labels.append(idx)
+
+        texts = Tokenizer.proc_all_mp(partition_by_cores(texts))
+        texts = [' '.join(text) + '<eos>' for text in texts]
+
+        return np.array(texts), np.array(labels)
+
+    trn_texts, trn_labels = get_texts(os.path.join(root_directory, 'train'))
+    val_texts, val_labels = get_texts(os.path.join(root_directory, 'test'))
+
+    col_names = ['labels', 'text']
+
+    np.random.seed(42)
+    trn_idx = np.random.permutation(len(trn_texts))
+    val_idx = np.random.permutation(len(val_texts))
+
+    trn_texts = trn_texts[trn_idx]
+    val_texts = val_texts[val_idx]
+
+    trn_labels = trn_labels[trn_idx]
+    val_labels = val_labels[val_idx]
+
+    df_trn = pd.DataFrame({'text':trn_texts, 'labels':trn_labels}, columns=col_names)
+    df_val = pd.DataFrame({'text':val_texts, 'labels':val_labels}, columns=col_names)
+
+    df_trn[df_trn['labels'] != 2].to_csv(os.path.join(root_directory, 'train.csv'), header=False, index=False)
+    df_val.to_csv(os.path.join(root_directory, 'test.csv'), header=False, index=False)
 
 
 def maybe_download(filename, source_url, work_directory):
@@ -68,9 +120,8 @@ def write_file(file_path, text_path, num_tokens):
 
 
 if __name__=='__main__':
-
     params = LoadParameters()
     print(params.params)
     print(type(params.params['lm_params']))
-    #write_file('assets/val.csv','assets/wikitext-103/valid.txt',1000000)
-    #write_file('assets/train.csv', 'assets/wikitext-103/train.txt', 1000000)
+
+    preprocess_imdb_sentiments('/Users/macuni/Documents/aclImdb')

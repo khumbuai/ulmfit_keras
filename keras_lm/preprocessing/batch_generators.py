@@ -25,6 +25,7 @@ class BatchGenerator:
         # Prevent excessively small or negative sequence lengths
         return max(5, int(np.random.normal(seq_len, 5)))
 
+
     def get_sample(self, pos, batch_seq_len):
         """
         Returns one x, y pair
@@ -103,8 +104,8 @@ if __name__ == '__main__':
                 print(Y.shape)
                 print('~~~~~~~~~~~')
 
-    normal_batch_generator = iter(BatchGenerator(corpus.train, batch_size=10, model_description='normal', seq_len=50, modify_seq_len=False))
-    many_to_one_batch_generator = iter(BatchGenerator(corpus.train, batch_size=10, model_description='many_to_one', seq_len=50, modify_seq_len=False))
+    normal_batch_generator = BatchGenerator(corpus.train, batch_size=10, model_description='normal', seq_len=50, modify_seq_len=False)
+    many_to_one_batch_generator = BatchGenerator(corpus.train, batch_size=10, model_description='many_to_one', seq_len=50, modify_seq_len=False)
 
     print('Normal')
     visualize_batches(normal_batch_generator)
