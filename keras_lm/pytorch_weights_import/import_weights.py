@@ -10,16 +10,6 @@ import numpy as np
 
 from keras_lm.language_model.model import build_language_model
 from keras_lm.language_model.train import evaluate_model
-from keras_lm.utils.utils import LoadParameters
-
-# The pretrained weights and the itos_wt103.pkl file can be found on http://files.fast.ai/models/wt103/
-params = LoadParameters()
-
-PYTORCH_WEIGTHS_FILEPATH = params.params['pytorch_weights_filepath']
-PYTORCH_IDX2WORD_FILEPATH = params.params['pytorch_idx2word_filepath']
-
-# Load the weights of the pretrained pytorch model
-wgts = torch.load(PYTORCH_WEIGTHS_FILEPATH, map_location=lambda storage, loc: storage)
 
 """
 for key, value in wgts.items():
@@ -63,13 +53,13 @@ for key, value in wgts.items():
 (238462, 400)
 """
 
-def create_embedding_weights():
+def create_embedding_weights(wgts):
     embedding_weights = wgts['0.encoder.weight'].numpy()
 
     return embedding_weights.reshape((1, -1, 400))
 
 
-def create_rnn_weights(i, use_gpu=True):
+def create_rnn_weights(i, wgts, use_gpu=True):
     """
     Fetches the weights form the pytorch LSTM layer and transforms it to weights which can be used
     for tensorflow LSTM layers
@@ -135,13 +125,19 @@ def create_rnn_weights(i, use_gpu=True):
 
 
 if __name__ == '__main__':
+    from keras_lm.utils.utils import LoadParameters
+
+    # The pretrained weights and the itos_wt103.pkl file can be found on http://files.fast.ai/models/wt103/
+    params = LoadParameters()
+    PYTORCH_WEIGTHS_FILEPATH = params.params['pytorch_weights_filepath']
+    PYTORCH_IDX2WORD_FILEPATH = params.params['pytorch_idx2word_filepath']
     LANGUAGE_MODEL_PARAMS = params.params['lm_params']
     LANGUAGE_MODEL_FILE = params.params['language_model_file']
 
     # 1. Grab weights from Pytorch model
-    embedding_weights = create_embedding_weights()
-
-    rnn_weights = [create_rnn_weights(i, use_gpu=LANGUAGE_MODEL_PARAMS['use_gpu']) for i in range(3)]
+    wgts = torch.load(PYTORCH_WEIGTHS_FILEPATH, map_location=lambda storage, loc: storage)
+    embedding_weights = create_embedding_weights(wgts)
+    rnn_weights = [create_rnn_weights(i, wgts, use_gpu=LANGUAGE_MODEL_PARAMS['use_gpu']) for i in range(3)]
 
     # 2. Initialize keras model with pretrained weights
     language_model = build_language_model(num_words=embedding_weights.shape[1],

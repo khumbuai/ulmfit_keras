@@ -52,5 +52,5 @@ def build_language_model(num_words, embedding_size=400, rnn_sizes=(1150, 1150),
 
 
 if __name__ == '__main__':
-    model = build_language_model(num_words=100)
+    model = build_language_model(num_words=100, use_qrnn=False)
     model.summary()

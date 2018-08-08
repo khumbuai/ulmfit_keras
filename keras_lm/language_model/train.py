@@ -7,7 +7,6 @@ from keras.optimizers import Adam
 
 from keras_lm.language_model.batch_generators import BatchGenerator
 from keras_lm.language_model.model import build_language_model
-from keras_lm.utils.utils import LoadParameters
 
 
 def evaluate_model(model, word2idx, test_sentence, num_predictions=5):
@@ -36,6 +35,7 @@ def evaluate_model(model, word2idx, test_sentence, num_predictions=5):
 
 
 if __name__ == '__main__':
+    from keras_lm.utils.utils import LoadParameters
 
     # 1. Load parameters from config.yaml file
     params = LoadParameters()
