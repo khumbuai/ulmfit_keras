@@ -2,18 +2,18 @@
 Fintunes a pretrained language model on a new language corpus.
 """
 
-import keras.backend as K
-from keras.losses import sparse_categorical_crossentropy
-from keras.callbacks import EarlyStopping, ModelCheckpoint
-
-from keras_lm.transfer_model.multilayer_optimizer import LRMultiplierSGD
-from keras_lm.language_model.model import build_language_model
-from keras_lm.preprocessing.batch_generators import BatchGenerator
-from keras_lm.language_model.train import evaluate_model
-
-import pickle
-import numpy as np
 import os
+import pickle
+
+import keras.backend as K
+import numpy as np
+from keras.callbacks import EarlyStopping, ModelCheckpoint
+from keras.losses import sparse_categorical_crossentropy
+
+from keras_lm.language_model.batch_generators import BatchGenerator
+from keras_lm.language_model.model import build_language_model
+from keras_lm.language_model.train import evaluate_model
+from keras_lm.transfer_model.multilayer_optimizer import LRMultiplierSGD
 
 
 def read_df(df):
@@ -121,8 +121,8 @@ if __name__ == '__main__':
     valid = [word2idx[word] for word in valid_text]
 
     # 6. Finetune model
-    train_gen = BatchGenerator(train, batch_size, 'normal', seq_length, modify_seq_len=True)
-    valid_gen = BatchGenerator(valid, batch_size, 'normal', seq_length, modify_seq_len=True)
+    train_gen = BatchGenerator(train, batch_size, seq_length, modify_seq_len=True)
+    valid_gen = BatchGenerator(valid, batch_size, seq_length, modify_seq_len=True)
 
     callbacks = [EarlyStopping(patience=5),
                  ModelCheckpoint(FINETUNED_WEIGTHS_FILEPATH, save_weights_only=True)]

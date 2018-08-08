@@ -1,12 +1,12 @@
+import pickle
+
 import keras.backend as K
+import numpy as np
 from keras.callbacks import EarlyStopping, ModelCheckpoint
 from keras.optimizers import Adam
 
-import pickle
-import numpy as np
-
+from keras_lm.language_model.batch_generators import BatchGenerator
 from keras_lm.language_model.model import build_language_model
-from keras_lm.preprocessing.batch_generators import BatchGenerator
 from keras_lm.utils.utils import LoadParameters
 
 
@@ -19,7 +19,7 @@ def evaluate_model(model, word2idx, test_sentence, num_predictions=5):
     :return: None
     """
 
-    idx2word = {i:w for w,i in word2idx.items()}
+    idx2word = {i: w for w, i in word2idx.items()}
     test_sentence = test_sentence.split()
     encoded_sentence = [word2idx[w] for w in test_sentence]
 
@@ -51,8 +51,8 @@ if __name__ == '__main__':
     # 2. Load Corpus
     corpus = pickle.load(open(WIKIPEDIA_CORPUS_FILE, 'rb'))
 
-    train_gen = BatchGenerator(corpus.train, batch_size, 'normal', seq_len, modify_seq_len=True)
-    valid_gen = BatchGenerator(corpus.valid, valid_batch_size, 'normal', seq_len, modify_seq_len=True)
+    train_gen = BatchGenerator(corpus.train, batch_size, seq_len, modify_seq_len=True)
+    valid_gen = BatchGenerator(corpus.valid, valid_batch_size, seq_len, modify_seq_len=True)
 
     K.clear_session()
     num_words = len(corpus.word2idx) + 1

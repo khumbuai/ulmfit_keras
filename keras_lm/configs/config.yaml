@@ -26,7 +26,7 @@ finetuned_language_model_weight: assets/weights/language_model_finetuned.hdf5
 finetuned_word2idx_filepath: assets/finetuned_corpus/word2idx.p
 
 # train.csv and test.csv are assumed to be in finetuned_corpus_filepath. See finetune_lm.py for more details
-finetuned_corpus_filepath = assets/finetuned_corpus/
+finetuned_corpus_filepath: assets/finetuned_corpus/
 
 # Classification Model
 classification_csv: assets/classification/sentiment.csv
@@ -34,4 +34,4 @@ classifiaction_language_model_weight: assets/weights/classification_model.hdf5
 
 
 number_of_labels: 5
-cm_params: {dense_units:(128, 128), dropouts:(0.1, 0.1)}
+cm_params: {'dense_units':(128, 128), 'dropouts':(0.1, 0.1)}

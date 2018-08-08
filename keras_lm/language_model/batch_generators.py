@@ -3,18 +3,17 @@ import numpy as np
 
 class BatchGenerator:
 
-    def __init__(self, tokenized_text, batch_size, model_description, seq_len, modify_seq_len=True):
+    def __init__(self, tokenized_text, batch_size, seq_len, modify_seq_len=True, only_last=False):
         """
         :param array tokenized_text: array of encoded text
         :param batch_size:
-        :param str model_description: Names the model, for which we need batches
+        :param bool only_last: Names the model, for which we need batches
         :param bool modify_seq_len: Determines, whether the sequence length should be randomly changed after each batch
         """
         self.tokenized_text = tokenized_text
         self.batch_size = batch_size
         self.modify_seq_len = modify_seq_len
-        assert model_description in ['normal', 'many_to_one'], 'Model not supported'
-        self.model_description = model_description
+        self.only_last = only_last
         self.seq_len = seq_len
 
         self.pos = 0
@@ -40,7 +39,7 @@ class BatchGenerator:
             end = len(self.tokenized_text)
            
         data = self.tokenized_text[start -1: end - 1]
-        target = self.tokenized_text[start:end] if self.model_description in ['normal', 'fast'] else self.tokenized_text[end - 1]
+        target = self.tokenized_text[end - 1] if self.only_last in ['normal', 'fast'] else self.tokenized_text[start:end]
         # need to expand the dimension, such that Y has shape (batch_size, seq_len, 1) (for normal model),
         # or (batch_size, 1) (for many_to_one model)
         # -> needed for sparse_categorical_crossentropy loss
@@ -104,8 +103,8 @@ if __name__ == '__main__':
                 print(Y.shape)
                 print('~~~~~~~~~~~')
 
-    normal_batch_generator = BatchGenerator(corpus.train, batch_size=10, model_description='normal', seq_len=50, modify_seq_len=False)
-    many_to_one_batch_generator = BatchGenerator(corpus.train, batch_size=10, model_description='many_to_one', seq_len=50, modify_seq_len=False)
+    normal_batch_generator = BatchGenerator(corpus.train, batch_size=10, seq_len=50, modify_seq_len=False)
+    many_to_one_batch_generator = BatchGenerator(corpus.train, batch_size=10, seq_len=50, modify_seq_len=False, only_last=True)
 
     print('Normal')
     visualize_batches(normal_batch_generator)
