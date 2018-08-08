@@ -40,7 +40,7 @@ if __name__ == '__main__':
     # 1. Load parameters from config.yaml file
     params = LoadParameters()
     WIKIPEDIA_CORPUS_FILE = params.params['wikipedia_corpus_file']
-    LANGUAGE_MODEL_FILE = params.params['language_model_file']
+    LANGUAGE_MODEL_WEIGHT = params.params['language_model_weight']
     LANGUAGE_MODEL_PARAMS = params.params['lm_params']
 
     epochs = params.params['lm_epochs']
@@ -64,7 +64,7 @@ if __name__ == '__main__':
     model.summary()
 
     callbacks = [EarlyStopping(patience=5),
-                 ModelCheckpoint(LANGUAGE_MODEL_FILE, save_weights_only=True)]
+                 ModelCheckpoint(LANGUAGE_MODEL_WEIGHT, save_weights_only=True)]
 
     history = model.fit_generator(train_gen,
                                   steps_per_epoch=len(corpus.train) // (seq_len * batch_size),

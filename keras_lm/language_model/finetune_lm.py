@@ -68,22 +68,22 @@ if __name__ == '__main__':
     import pandas as pd
     from collections import Counter, defaultdict
 
-    PYTORCH_ITOS_FILEPATH = os.path.join('assets/wikitext-103/itos_wt103.pkl')
+    from keras_lm.utils.utils import LoadParameters
 
-    FINETUNED_CORPUS_FILEPATH = 'assets/finetuned_corpus/'
+    # 1. Load parameters from config.yaml
+    params = LoadParameters()
 
-    WEIGTHS_FILEPATH = 'assets/weights/language_model.hdf5'
-    FINETUNED_WEIGTHS_FILEPATH = 'assets/weights/language_model_finetuned.hdf5'
-    FINETUNED_WORD2IDX_FILEPATH = 'assets/finetuned_corpus/word2idx.p'
+    PYTORCH_ITOS_FILEPATH = params.params['pytorch_idx2word_filepath']
+    WEIGTHS_FILEPATH = params.params['language_model_weight']
+    FINETUNED_WEIGTHS_FILEPATH = params.params['finetuned_language_model_weight']
+    FINETUNED_WORD2IDX_FILEPATH = params.params['finetuned_word2idx_filepath']
+    LANGUAGE_MODEL_PARAMS = params.params['lm_params']
+    FINETUNED_CORPUS_FILEPATH = params.params['finetuned_corpus_filepath']
 
-    LANGUAGE_MODEL_PARAMS = {'embedding_size': 400, 'rnn_sizes': (1150, 1150), 'use_gpu': False,
-                             'dropout': 0.1, 'tie_weights': True, 'use_qrnn':False, 'only_last': False
-                            }
+    batch_size = params.params['lm_batch_size']
+    seq_length = params.params['lm_seq_len']
 
-    batch_size = 64
-    seq_length = 50
-
-    # 1. Initialize pretrained language model.
+    # 2. Initialize pretrained language model.
     K.clear_session()
     with open(PYTORCH_ITOS_FILEPATH, 'rb') as f:
         words = pickle.load(f)
@@ -98,9 +98,9 @@ if __name__ == '__main__':
     language_model.summary()
     language_model.load_weights(WEIGTHS_FILEPATH)
 
-    # 2. Open target training dataset. We assume that the dataframes contains the already tokenized sentences.
+    # 3. Open target training dataset. We assume that the dataframes contains the already tokenized sentences.
     train_df = pd.read_csv(os.path.join(FINETUNED_CORPUS_FILEPATH, 'train.csv'), names=['mood', 'text'])
-    valid_df = pd.read_csv(os.path.join(FINETUNED_CORPUS_FILEPATH, 'train.csv'), names=['mood', 'text'])
+    valid_df = pd.read_csv(os.path.join(FINETUNED_CORPUS_FILEPATH, 'test.csv'), names=['mood', 'text'])
 
     train_text = read_df(train_df)
     valid_text = read_df(valid_df)
@@ -109,18 +109,18 @@ if __name__ == '__main__':
 
     unique_words = [o for o, c in Counter(text).most_common(100000) if c > 10]
 
-    # 3. Add new words to the word2idx dictionary and update the language model.
+    # 4. Add new words to the word2idx dictionary and update the language model.
     num_words_not_in_corpus = len(set(unique_words) - set(word2idx.keys()))
     word2idx = update_word2idx(unique_words, word2idx)
     language_model = update_language_model(language_model, num_words_not_in_corpus, **LANGUAGE_MODEL_PARAMS)
 
     language_model.summary()
 
-    # 4. Prepare training and validation data
+    # 5. Prepare training and validation data
     train = [word2idx[word] for word in train_text]
     valid = [word2idx[word] for word in valid_text]
 
-    # 5. Finetune model
+    # 6. Finetune model
     train_gen = BatchGenerator(train, batch_size, 'normal', seq_length, modify_seq_len=True)
     valid_gen = BatchGenerator(valid, batch_size, 'normal', seq_length, modify_seq_len=True)
 
@@ -142,6 +142,6 @@ if __name__ == '__main__':
 
     evaluate_model(language_model, word2idx, 'i feel sick and go to the', num_predictions=5)
 
-    # 6. Save word2idx dictionary
+    # 7. Save word2idx dictionary
     with open(FINETUNED_WORD2IDX_FILEPATH, 'wb') as f:
         pickle.dump(word2idx, f)

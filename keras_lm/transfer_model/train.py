@@ -1,16 +1,12 @@
-import os
 import pickle
 
 import keras.backend as K
-import numpy as np
-from keras.callbacks import EarlyStopping, ModelCheckpoint
 from keras.losses import categorical_crossentropy
-from keras.optimizers import Adam
 
 from keras_lm.transfer_model.model import build_classification_model
 from keras_lm.language_model.model import build_language_model
 from keras_lm.transfer_model.multilayer_optimizer import LRMultiplierSGD
-
+from keras_lm.utils.utils import LoadParameters
 
 def train_classifiaction_model(classification_model, X_train, y_train, epochs_list, learning_rates_list):
     """
@@ -44,29 +40,38 @@ def train_classifiaction_model(classification_model, X_train, y_train, epochs_li
 
 
 if __name__ == '__main__':
-    CORPUS_FILEPATH = 'assets/wikitext-103/wikitext-103.corpus'
-    TRAINING_DATA_FILEPATH = ''
-    FINETUNED_WEIGTHS_FILEPATH = 'weights/language_model_finetuned.hdf5'
-    NUMBER_OF_LABELS = 5
 
-    # 1. Initialize pretrained language model.
+    # 1. Load parameters from config.yaml
+    params = LoadParameters()
+
+    CORPUS_FILEPATH = params.params['wikipedia_corpus_file']
+    TRAINING_DATA_FILEPATH = params.params['classification_csv']
+    CLASSIFICATON_MODEL_FILE = params.params['classifiaction_language_model_weight']
+
+    FINETUNED_WEIGTHS_FILEPATH = params.params['finetuned_language_model_weight']
+    NUMBER_OF_LABELS = params.params['number_of_labels']
+
+    # 2. Initialize pretrained language model.
     K.clear_session()
     wikitext_corpus = pickle.load(open(CORPUS_FILEPATH,'rb'))
     num_words = len(wikitext_corpus.word2idx) +1
 
     language_model = build_language_model(num_words, embedding_size=300, use_gpu=True)
     language_model.summary()
-    #language_model.load_weights(FINETUNED_WEIGTHS_FILEPATH)
+    language_model.load_weights(FINETUNED_WEIGTHS_FILEPATH)
 
-    # 2. Initialize classifiaction_model
+    # 3. Initialize classifiaction_model
     classification_model = build_classification_model(language_model, NUMBER_OF_LABELS,
-                                                      dense_units=(128, 128), dropouts=(0.1, 0.1))
+                                                      **params.params['cm_params'])
 
-    # 3. Load X_train from pickle file
+    # 4. Load X_train from pickle file
     with open(TRAINING_DATA_FILEPATH, 'rb') as f:
         X_train, y_train = pickle.load(f)
 
-    # 4. Train classification model
+    # 5. Train classification model
     epochs_list = [1 for layer in classification_model.layers]
     learning_rates_list = [0.01 for layer in classification_model.layers]
     train_classifiaction_model(classification_model, X_train, y_train, epochs_list, learning_rates_list)
+
+    # 6. Save classification model
+    classification_model.save(CLASSIFICATON_MODEL_FILE, overwrite=True)

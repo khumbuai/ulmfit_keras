@@ -137,7 +137,8 @@ def create_rnn_weights(i, use_gpu=True):
 if __name__ == '__main__':
     LANGUAGE_MODEL_PARAMS = params.params['lm_params']
     LANGUAGE_MODEL_FILE = params.params['language_model_file']
-    # 1. Grap weights from Pytorch model
+
+    # 1. Grab weights from Pytorch model
     embedding_weights = create_embedding_weights()
 
     rnn_weights = [create_rnn_weights(i, use_gpu=LANGUAGE_MODEL_PARAMS['use_gpu']) for i in range(3)]
@@ -158,7 +159,6 @@ if __name__ == '__main__':
         rnn_layer.set_weights(rnn_weights[i])
 
     # 3. Save model
-
     language_model.save(LANGUAGE_MODEL_FILE, overwrite=True)
 
     # 4. Evaluate language model
