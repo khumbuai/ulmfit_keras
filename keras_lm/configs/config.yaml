@@ -3,11 +3,11 @@ project: USERNAME/PROJECT_NAME
 name: keras_wiki_lm
 
 # Data Paths
-wikipedia_corpus_file: /assets/wikitext-103/wikitext-103.corpus
+wikipedia_corpus_file: assets/wikitext-103/wikitext-103.corpus
 language_model_file: assets/language_model.hdf5
 
-pytorch_weights_filepath: /assets/weights/fwd_wt103.h5
-pytorch_idx2word_filepath: /assets/wikitext/itos_wt103.pkl
+pytorch_weights_filepath: assets/weights/fwd_wt103.h5
+pytorch_idx2word_filepath: assets/wikitext/itos_wt103.pkl
 
 
 # Language Model Params
