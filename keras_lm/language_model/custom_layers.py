@@ -316,8 +316,6 @@ class QRNN(Layer):
         return dict(list(base_config.items()) + list(config.items()))
 
 
-
-
 class TiedEmbeddingsTransposed(Layer):
     """Layer for tying embeddings in an output layer.
     A regular embedding layer has the shape: V x H (V: size of the vocabulary. H: size of the projected space).

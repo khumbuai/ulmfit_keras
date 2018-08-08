@@ -10,10 +10,13 @@ import numpy as np
 
 from keras_lm.language_model.model import build_language_model
 from keras_lm.language_model.train import evaluate_model
+from keras_lm.utils.utils import LoadParameters
 
 # The pretrained weights and the itos_wt103.pkl file can be found on http://files.fast.ai/models/wt103/
-PYTORCH_WEIGTHS_FILEPATH = 'assets/weights/fwd_wt103.h5'
-PYTORCH_IDX2WORD_FILEPATH = 'assets/wikitext-103/itos_wt103.pkl'
+params = LoadParameters()
+
+PYTORCH_WEIGTHS_FILEPATH = params.params['pytorch_weights_filepath']
+PYTORCH_IDX2WORD_FILEPATH = params.params['pytorch_idx2word_filepath']
 
 # Load the weights of the pretrained pytorch model
 wgts = torch.load(PYTORCH_WEIGTHS_FILEPATH, map_location=lambda storage, loc: storage)
@@ -132,10 +135,8 @@ def create_rnn_weights(i, use_gpu=True):
 
 
 if __name__ == '__main__':
-    LANGUAGE_MODEL_PARAMS = {'embedding_size': 400, 'rnn_sizes': (1150, 1150), 'use_gpu': False,
-                             'dropout': 0.1, 'tie_weights': True, 'use_qrnn': False, 'only_last': False
-                             }
-
+    LANGUAGE_MODEL_PARAMS = params.params['lm_params']
+    LANGUAGE_MODEL_FILE = params.params['language_model_file']
     # 1. Grap weights from Pytorch model
     embedding_weights = create_embedding_weights()
 
@@ -157,7 +158,8 @@ if __name__ == '__main__':
         rnn_layer.set_weights(rnn_weights[i])
 
     # 3. Save model
-    language_model.save('assets/language_model.hdf5', overwrite=True)
+
+    language_model.save(LANGUAGE_MODEL_FILE, overwrite=True)
 
     # 4. Evaluate language model
     with open(PYTORCH_IDX2WORD_FILEPATH, 'rb') as f:
