@@ -25,6 +25,10 @@ class Missingdict(dict):
 
 
 class Corpus(object):
+    """
+    Loads the train.txt, valid.txt and test.txt files and tokenizes them.
+    The class then contains the train, valid and test corpus (with word2idx applied), as well as the word2idx dictionary.
+    """
 
     def __init__(self, path, lang='en', max_vocab=30000, min_freq=10, word2idx=None):
         try:
@@ -129,8 +133,10 @@ def create_corpus(PYTORCH_IDX2WORD_FILEPATH, WIKI103_FOLDER):
 
     # 2. Create corpus from Wiki103 files
     corpus = Corpus(WIKI103_FOLDER, word2idx=word2idx)
+
+    to_save = [corpus.train, corpus.valid, corpus.test, corpus.word2idx, corpus.idx2word]
     with open(os.path.join(WIKI103_FOLDER, 'wikitext-103.corpus'), 'wb') as f:
-        pickle.dump(corpus, f)
+        pickle.dump(to_save, f)
 
 
 if __name__ == '__main__':
@@ -141,3 +147,4 @@ if __name__ == '__main__':
     PYTORCH_IDX2WORD_FILEPATH = params.params['pytorch_idx2word_filepath']
 
     create_corpus(PYTORCH_IDX2WORD_FILEPATH, WIKI103_FOLDER)
+

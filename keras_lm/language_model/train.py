@@ -49,13 +49,13 @@ if __name__ == '__main__':
     seq_len = params.params['lm_seq_len']
 
     # 2. Load Corpus
-    corpus = pickle.load(open(WIKIPEDIA_CORPUS_FILE, 'rb'))
+    [train, valid, test, word2idx, idx2word] = pickle.load(open(WIKIPEDIA_CORPUS_FILE, 'rb'))
 
-    train_gen = BatchGenerator(corpus.train, batch_size, seq_len, modify_seq_len=True)
-    valid_gen = BatchGenerator(corpus.valid, valid_batch_size, seq_len, modify_seq_len=True)
+    train_gen = BatchGenerator(train, batch_size, seq_len, modify_seq_len=True)
+    valid_gen = BatchGenerator(valid, valid_batch_size, seq_len, modify_seq_len=True)
 
     K.clear_session()
-    num_words = len(corpus.word2idx) + 1
+    num_words = len(word2idx) + 1
 
     model = build_language_model(num_words, **LANGUAGE_MODEL_PARAMS)
     model.compile(loss='sparse_categorical_crossentropy', metrics=['sparse_categorical_accuracy'],
@@ -67,11 +67,11 @@ if __name__ == '__main__':
                  ModelCheckpoint(LANGUAGE_MODEL_WEIGHT, save_weights_only=True)]
 
     history = model.fit_generator(train_gen,
-                                  steps_per_epoch=len(corpus.train) // (seq_len * batch_size),
+                                  steps_per_epoch=len(train) // (seq_len * batch_size),
                                   epochs=epochs,
                                   validation_data=valid_gen,
-                                  validation_steps=len(corpus.valid) // (seq_len * batch_size),
+                                  validation_steps=len(valid) // (seq_len * batch_size),
                                   callbacks=callbacks,
                                   )
 
-    evaluate_model(model, corpus.word2idx, 'i feel sick and go to the ')
+    evaluate_model(model, word2idx, 'i feel sick and go to the ')
