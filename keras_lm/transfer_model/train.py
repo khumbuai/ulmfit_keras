@@ -5,7 +5,7 @@ from keras.losses import categorical_crossentropy
 
 from keras_lm.transfer_model.model import build_classification_model
 from keras_lm.language_model.model import build_language_model
-from keras_lm.transfer_model.multilayer_optimizer import LRMultiplierSGD
+from keras_lm.transfer_model.custom_optimizer import LRMultiplierSGD
 
 def train_classifiaction_model(classification_model, X_train, y_train, epochs_list, learning_rates_list):
     """

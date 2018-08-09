@@ -5,6 +5,7 @@ name: keras_wiki_lm
 # Data Paths
 wikipedia_corpus_file: assets/wikitext-103/wikitext-103.corpus
 language_model_weight: assets/weights/language_model.hdf5
+wiki103_text_folder: assets/wikitext-103/
 
 # Language Model Params
 lm_params: {'embedding_size': 400, 'rnn_sizes': (1150, 1150), 'use_gpu': True,
@@ -19,7 +20,7 @@ lm_seq_len: 50
 
 # Pytorch Language Model
 pytorch_weights_filepath: assets/weights/fwd_wt103.h5
-pytorch_idx2word_filepath: assets/wikitext/itos_wt103.pkl
+pytorch_idx2word_filepath: assets/wikitext-103/itos_wt103.pkl
 
 # Finetune Language Model
 finetuned_language_model_weight: assets/weights/language_model_finetuned.hdf5
@@ -32,6 +33,8 @@ finetuned_corpus_filepath: assets/finetuned_corpus/
 classification_csv: assets/classification/sentiment.csv
 classifiaction_language_model_weight: assets/weights/classification_model.hdf5
 
-
 number_of_labels: 5
 cm_params: {'dense_units':(128, 128), 'dropouts':(0.1, 0.1)}
+
+# IMDB dataset Files -> download from http://ai.stanford.edu/~amaas/data/sentiment/
+imdb_folder: /Users/macuni/Documents/aclImdb

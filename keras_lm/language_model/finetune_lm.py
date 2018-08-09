@@ -13,7 +13,7 @@ from keras.losses import sparse_categorical_crossentropy
 from keras_lm.language_model.batch_generators import BatchGenerator
 from keras_lm.language_model.model import build_language_model
 from keras_lm.language_model.train import evaluate_model
-from keras_lm.transfer_model.multilayer_optimizer import LRMultiplierSGD
+from keras_lm.transfer_model.custom_optimizer import LRMultiplierSGD
 
 
 def read_df(df):

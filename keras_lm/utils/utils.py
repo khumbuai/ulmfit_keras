@@ -124,4 +124,5 @@ if __name__=='__main__':
     print(params.params)
     print(type(params.params['lm_params']))
 
-    preprocess_imdb_sentiments('/Users/macuni/Documents/aclImdb')
+    IMDB_FOLDER = params.params['imdb_folder']
+    preprocess_imdb_sentiments(IMDB_FOLDER)
