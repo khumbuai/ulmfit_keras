@@ -1,0 +1,40 @@
+project: USERNAME/PROJECT_NAME
+
+name: keras_wiki_lm
+
+# Data Paths
+wikipedia_corpus_file: assets/wikitext-103/wikitext-103.corpus
+language_model_weight: assets/weights/language_model.hdf5
+wiki103_text_folder: assets/wikitext-103/
+
+# Language Model Params
+lm_params: {'embedding_size': 400, 'rnn_sizes': (1150, 1150), 'use_gpu': True,
+            'dropout': 0.1, 'tie_weights': True, 'use_qrnn': False, 'only_last': False
+            }
+
+# Language Model initial training params
+lm_epochs : 20
+lm_batch_size :  64
+lm_valid_batch_size: 16
+lm_seq_len: 50
+
+# Pytorch Language Model
+pytorch_weights_filepath: assets/weights/fwd_wt103.h5
+pytorch_idx2word_filepath: assets/wikitext-103/itos_wt103.pkl
+
+# Finetune Language Model
+finetuned_language_model_weight: assets/weights/language_model_finetuned.hdf5
+finetuned_word2idx_filepath: assets/finetuned_corpus/word2idx.p
+
+# train.csv and test.csv are assumed to be in finetuned_corpus_filepath. See finetune_lm.py for more details
+finetuned_corpus_filepath: assets/finetuned_corpus/
+
+# Classification Model
+classification_csv: assets/classification/sentiment.csv
+classifiaction_language_model_weight: assets/weights/classification_model.hdf5
+
+number_of_labels: 5
+cm_params: {'dense_units':(128, 128), 'dropouts':(0.1, 0.1)}
+
+# IMDB dataset Files -> download from http://ai.stanford.edu/~amaas/data/sentiment/
+imdb_folder: /Users/macuni/Documents/aclImdb
